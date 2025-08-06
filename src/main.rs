@@ -1,3 +1,4 @@
+use clap::Parser;
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEvent},
@@ -7,6 +8,22 @@ use crossterm::{
 };
 use rand::Rng;
 use std::io::{self, Result, Write};
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(long, default_value_t = 18)]
+    /// number of columns
+    width: usize,
+
+    #[arg(long, default_value_t = 10)]
+    /// number of rows
+    height: usize,
+
+    #[arg(long, default_value_t = 25)]
+    /// number of mines
+    num_mines: usize,
+}
 
 // --- CONFIGURATION & SYMBOLS ---
 const CELL_WIDTH: u16 = 3; // Each cell will be 3 characters wide
@@ -323,12 +340,9 @@ impl Game {
 }
 
 fn main() -> Result<()> {
-    // Adjusted dimensions for a wider display
-    let width = 18;
-    let height = 10;
-    let num_mines = 25;
+    let args = Args::parse();
 
-    let mut game = Game::new(width, height, num_mines);
+    let mut game = Game::new(args.width, args.height, args.num_mines);
     let mut stdout = io::stdout();
 
     terminal::enable_raw_mode()?;
