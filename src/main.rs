@@ -33,8 +33,6 @@ const CURSOR_BG_COLOR: Color = Color::DarkYellow;
 const BOMB: char = '💣';
 const FLAG: char = '🚩';
 const EXPLOSION: char = '💥';
-//const BOMB: char = '*';
-//const FLAG: char = 'F';
 const COVERED: char = '#';
 const EMPTY: char = '.';
 
@@ -141,8 +139,8 @@ impl Game {
 
     fn count_adjacent_mines(&self, x: usize, y: usize) -> u8 {
         let mut count = 0;
-        for dy in -1..=1 {
-            for dx in -1..=1 {
+        for dy in -1..1 {
+            for dx in -1..1 {
                 if dx == 0 && dy == 0 {
                     continue;
                 }
@@ -244,6 +242,60 @@ impl Game {
         }
     }
 
+    fn display_help(&self, stdout: &mut io::Stdout) -> Result<()> {
+        queue!(stdout, Clear(ClearType::All))?;
+
+        let help_content = [
+            ("MINESWEEPER - HELP", Color::Cyan),
+            ("", Color::White),
+            ("OBJECTIVE: Clear all cells without mines", Color::White),
+            ("", Color::White),
+            ("CONTROLS:", Color::Yellow),
+            ("  ↑↓←→ / hjkl    Move cursor", Color::White),
+            ("  R / Enter      Reveal cell", Color::White),
+            ("  F / Space      Toggle flag", Color::White),
+            ("  H / ?          This help", Color::White),
+            ("  N              New game (when over)", Color::White),
+            ("  Q / Esc        Quit", Color::White),
+            ("", Color::White),
+            ("SYMBOLS:", Color::Yellow),
+            (
+                &format!(
+                    "  {:3} Covered    {}  Flagged     {:2}  Empty",
+                    COVERED, FLAG, EMPTY
+                ),
+                Color::White,
+            ),
+            (
+                &format!(
+                    "  1-8 Mine count {}  Mine        {}  Explosion",
+                    BOMB, EXPLOSION
+                ),
+                Color::White,
+            ),
+            ("", Color::White),
+            (
+                "TIP: Numbers show how many mines touch that cell",
+                Color::DarkGrey,
+            ),
+            ("", Color::White),
+            ("Press any key to continue...", Color::Cyan),
+        ];
+        for (i, (text, color)) in help_content.iter().enumerate() {
+            queue!(
+                stdout,
+                cursor::MoveTo(2, i as u16 + 1),
+                SetForegroundColor(*color),
+                Print(text)
+            )?;
+        }
+
+        queue!(stdout, ResetColor)?;
+        stdout.flush()?;
+        let _ = event::read()?;
+        Ok(())
+    }
+
     /// Redraws the entire screen using explicit cursor positioning for stability.
     fn display(&self, stdout: &mut io::Stdout) -> Result<()> {
         queue!(stdout, Clear(ClearType::All))?;
@@ -257,7 +309,7 @@ impl Game {
             Print(name),
             cursor::MoveTo(0, 1),
             SetForegroundColor(Color::DarkGrey),
-            Print("Controls: ←↑↓→ Move | R Reveal | F Flag | Q Quit")
+            Print("Controls: ←↑↓→ Move | R Reveal | F Flag | Q Quit | ? Help")
         )?;
 
         // --- Draw game status ---
@@ -310,50 +362,12 @@ impl Game {
                     cursor::MoveTo(screen_x, screen_y),
                     Print(display_string), // print
                 )?;
-
-                // Draw headers on the first pass
-                // if x == 0 {
-                //     queue!(
-                //         stdout,
-                //         cursor::MoveTo(BOARD_OFFSET_X - 2, screen_y),
-                //         SetForegroundColor(Color::DarkCyan),
-                //         SetBackgroundColor(Color::Black), // Reset background
-                //         Print(y % 10)
-                //     )?;
-                // }
-                // if y == 0 {
-                //     // Center the header in the 3-wide cell
-                //     queue!(
-                //         stdout,
-                //         cursor::MoveTo(screen_x + CELL_WIDTH / 2, BOARD_OFFSET_Y - 1),
-                //         SetForegroundColor(Color::DarkCyan),
-                //         SetBackgroundColor(Color::Black), // Reset background
-                //         Print(x % 10)
-                //     )?;
-                // }
             }
         }
 
         queue!(stdout, ResetColor)?; // Reset colors at the very end
         stdout.flush()
     }
-}
-
-fn main() -> Result<()> {
-    let args = Args::parse();
-
-    let mut game = Game::new(args.width, args.height, args.num_mines);
-    let mut stdout = io::stdout();
-
-    terminal::enable_raw_mode()?;
-    execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
-
-    let result = game_loop(&mut game, &mut stdout);
-
-    execute!(stdout, cursor::Show, terminal::LeaveAlternateScreen)?;
-    terminal::disable_raw_mode()?;
-
-    result
 }
 
 fn game_loop(game: &mut Game, stdout: &mut io::Stdout) -> Result<()> {
@@ -364,6 +378,7 @@ fn game_loop(game: &mut Game, stdout: &mut io::Stdout) -> Result<()> {
             let is_game_over = game.game_state != GameState::Playing;
             match code {
                 KeyCode::Char('q') | KeyCode::Esc => break,
+                KeyCode::Char('?') => game.display_help(stdout)?,
                 KeyCode::Char('n') if is_game_over => {
                     *game = Game::new(game.width, game.height, game.num_mines);
                 }
@@ -379,4 +394,25 @@ fn game_loop(game: &mut Game, stdout: &mut io::Stdout) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn main() -> Result<()> {
+    let args = Args::parse();
+
+    if args.width * args.height <= args.num_mines {
+        println!("Too many mines!");
+        std::process::exit(0);
+    }
+    let mut game = Game::new(args.width, args.height, args.num_mines);
+    let mut stdout = io::stdout();
+
+    terminal::enable_raw_mode()?;
+    execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
+
+    let result = game_loop(&mut game, &mut stdout);
+
+    execute!(stdout, cursor::Show, terminal::LeaveAlternateScreen)?;
+    terminal::disable_raw_mode()?;
+
+    result
 }
