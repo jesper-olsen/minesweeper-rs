@@ -286,25 +286,25 @@ impl Game {
                 )?;
 
                 // Draw headers on the first pass
-                if x == 0 {
-                    queue!(
-                        stdout,
-                        cursor::MoveTo(BOARD_OFFSET_X - 2, screen_y),
-                        SetForegroundColor(Color::DarkCyan),
-                        SetBackgroundColor(Color::Black), // Reset background
-                        Print(y % 10)
-                    )?;
-                }
-                if y == 0 {
-                    // Center the header in the 3-wide cell
-                    queue!(
-                        stdout,
-                        cursor::MoveTo(screen_x + CELL_WIDTH / 2, BOARD_OFFSET_Y - 1),
-                        SetForegroundColor(Color::DarkCyan),
-                        SetBackgroundColor(Color::Black), // Reset background
-                        Print(x % 10)
-                    )?;
-                }
+                // if x == 0 {
+                //     queue!(
+                //         stdout,
+                //         cursor::MoveTo(BOARD_OFFSET_X - 2, screen_y),
+                //         SetForegroundColor(Color::DarkCyan),
+                //         SetBackgroundColor(Color::Black), // Reset background
+                //         Print(y % 10)
+                //     )?;
+                // }
+                // if y == 0 {
+                //     // Center the header in the 3-wide cell
+                //     queue!(
+                //         stdout,
+                //         cursor::MoveTo(screen_x + CELL_WIDTH / 2, BOARD_OFFSET_Y - 1),
+                //         SetForegroundColor(Color::DarkCyan),
+                //         SetBackgroundColor(Color::Black), // Reset background
+                //         Print(x % 10)
+                //     )?;
+                // }
             }
         }
 
@@ -345,10 +345,10 @@ fn game_loop(game: &mut Game, stdout: &mut io::Stdout) -> Result<()> {
                     *game = Game::new(game.width, game.height, game.num_mines);
                 }
                 _ if is_game_over => {} // Ignore other input if game over
-                KeyCode::Up => game.move_cursor(0, -1),
-                KeyCode::Down => game.move_cursor(0, 1),
-                KeyCode::Left => game.move_cursor(-1, 0),
-                KeyCode::Right => game.move_cursor(1, 0),
+                KeyCode::Up | KeyCode::Char('k') => game.move_cursor(0, -1),
+                KeyCode::Down | KeyCode::Char('j') => game.move_cursor(0, 1),
+                KeyCode::Left | KeyCode::Char('h') => game.move_cursor(-1, 0),
+                KeyCode::Right | KeyCode::Char('l') => game.move_cursor(1, 0),
                 KeyCode::Char('r') | KeyCode::Enter => game.reveal(game.cursor_x, game.cursor_y),
                 KeyCode::Char('f') | KeyCode::Char(' ') => game.flag(game.cursor_x, game.cursor_y),
                 _ => {}
