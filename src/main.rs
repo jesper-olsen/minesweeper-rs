@@ -15,6 +15,7 @@ const CURSOR_BG_COLOR: Color = Color::DarkYellow;
 // Use simple, single-width ASCII characters. They will be padded.
 const BOMB: char = '💣';
 const FLAG: char = '🚩';
+const EXPLOSION: char = '💥';
 //const BOMB: char = '*';
 //const FLAG: char = 'F';
 const COVERED: char = '#';
@@ -27,6 +28,7 @@ const BOARD_OFFSET_Y: u16 = 5;
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum CellContent {
     Mine,
+    Explosion,
     Number(u8),
 }
 
@@ -150,7 +152,10 @@ impl Game {
 
         self.board[y][x].state = CellState::Revealed;
         match self.board[y][x].content {
-            CellContent::Mine => self.game_state = GameState::Lost,
+            CellContent::Mine => {
+                self.game_state = GameState::Lost;
+                self.board[y][x].content = CellContent::Explosion;
+            }
             CellContent::Number(0) => {
                 for dy in -1..=1 {
                     for dx in -1..=1 {
@@ -194,8 +199,10 @@ impl Game {
     }
 
     fn move_cursor(&mut self, dx: isize, dy: isize) {
-        self.cursor_x = (self.cursor_x as isize + dx).clamp(0, self.width as isize - 1) as usize;
-        self.cursor_y = (self.cursor_y as isize + dy).clamp(0, self.height as isize - 1) as usize;
+        // self.cursor_x = (self.cursor_x as isize + dx).clamp(0, self.width as isize - 1) as usize;
+        // self.cursor_y = (self.cursor_y as isize + dy).clamp(0, self.height as isize - 1) as usize;
+        self.cursor_x = ((self.cursor_x as isize + dx).rem_euclid(self.width as isize)) as usize;
+        self.cursor_y = ((self.cursor_y as isize + dy).rem_euclid(self.height as isize)) as usize;
     }
 
     /// Gets the character and color for a cell, but not its formatting or cursor highlight.
@@ -207,15 +214,14 @@ impl Game {
             CellState::Flagged if !show_all => (FLAG, Color::Red),
             _ => match cell.content {
                 CellContent::Mine => (BOMB, Color::Magenta),
+                CellContent::Explosion => (EXPLOSION, Color::Magenta),
                 CellContent::Number(0) => (EMPTY, Color::White),
+                CellContent::Number(1) => ('1', Color::Blue),
+                CellContent::Number(2) => ('2', Color::Green),
+                CellContent::Number(3) => ('3', Color::Red),
                 CellContent::Number(n) => (
                     char::from_digit(n as u32, 10).unwrap_or('?'),
-                    match n {
-                        1 => Color::Blue,
-                        2 => Color::Green,
-                        3 => Color::Red,
-                        _ => Color::DarkYellow,
-                    },
+                    Color::DarkYellow,
                 ),
             },
         }
@@ -226,11 +232,12 @@ impl Game {
         queue!(stdout, Clear(ClearType::All))?;
 
         // --- Draw static text ---
+        let name = format!("MINESWEEPER ({}x{})", self.width, self.height);
         queue!(
             stdout,
             cursor::MoveTo(0, 0),
             SetForegroundColor(Color::Cyan),
-            Print("MINESWEEPER"),
+            Print(name),
             cursor::MoveTo(0, 1),
             SetForegroundColor(Color::DarkGrey),
             Print("Controls: ←↑↓→ Move | R Reveal | F Flag | Q Quit")
@@ -274,7 +281,7 @@ impl Game {
                 };
 
                 // Format the 3-character wide cell content
-                let display_string = format!(" {} ", char);
+                let display_string = format!(" {char}");
 
                 // Queue all commands for drawing one cell
                 queue!(
@@ -282,7 +289,9 @@ impl Game {
                     cursor::MoveTo(screen_x, screen_y),
                     SetForegroundColor(fg_color),
                     SetBackgroundColor(bg_color),
-                    Print(display_string),
+                    Print("   "), // clear
+                    cursor::MoveTo(screen_x, screen_y),
+                    Print(display_string), // print
                 )?;
 
                 // Draw headers on the first pass
