@@ -1,0 +1,359 @@
+use crossterm::{
+    cursor,
+    event::{self, Event, KeyCode, KeyEvent},
+    execute, queue,
+    style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
+    terminal::{self, Clear, ClearType},
+};
+use rand::Rng;
+use std::io::{self, Result, Write};
+
+// --- CONFIGURATION & SYMBOLS ---
+const CELL_WIDTH: u16 = 3; // Each cell will be 3 characters wide
+const CURSOR_BG_COLOR: Color = Color::DarkYellow;
+
+// Use simple, single-width ASCII characters. They will be padded.
+const BOMB: char = '💣';
+const FLAG: char = '🚩';
+//const BOMB: char = '*';
+//const FLAG: char = 'F';
+const COVERED: char = '#';
+const EMPTY: char = '.';
+
+// Offsets for drawing the board on the screen
+const BOARD_OFFSET_X: u16 = 3;
+const BOARD_OFFSET_Y: u16 = 5;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum CellContent {
+    Mine,
+    Number(u8),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum CellState {
+    Covered,
+    Revealed,
+    Flagged,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Cell {
+    content: CellContent,
+    state: CellState,
+}
+
+#[derive(Debug, PartialEq)]
+enum GameState {
+    Playing,
+    Won,
+    Lost,
+}
+
+struct Game {
+    board: Vec<Vec<Cell>>,
+    width: usize,
+    height: usize,
+    num_mines: usize,
+    cursor_x: usize,
+    cursor_y: usize,
+    game_state: GameState,
+    first_click: bool,
+}
+
+impl Game {
+    fn new(width: usize, height: usize, num_mines: usize) -> Self {
+        let board = vec![
+            vec![
+                Cell {
+                    content: CellContent::Number(0),
+                    state: CellState::Covered,
+                };
+                width
+            ];
+            height
+        ];
+
+        Game {
+            board,
+            width,
+            height,
+            num_mines,
+            cursor_x: width / 2,
+            cursor_y: height / 2,
+            game_state: GameState::Playing,
+            first_click: true,
+        }
+    }
+
+    fn place_mines(&mut self, avoid_x: usize, avoid_y: usize) {
+        let mut rng = rand::rng();
+        let mut mines_placed = 0;
+
+        while mines_placed < self.num_mines {
+            let x = rng.random_range(0..self.width);
+            let y = rng.random_range(0..self.height);
+
+            if (x as isize - avoid_x as isize).abs() <= 1
+                && (y as isize - avoid_y as isize).abs() <= 1
+            {
+                continue;
+            }
+
+            if self.board[y][x].content == CellContent::Number(0) {
+                self.board[y][x].content = CellContent::Mine;
+                mines_placed += 1;
+            }
+        }
+
+        self.calculate_numbers();
+    }
+
+    fn calculate_numbers(&mut self) {
+        for y in 0..self.height {
+            for x in 0..self.width {
+                if self.board[y][x].content == CellContent::Mine {
+                    continue;
+                }
+                self.board[y][x].content = CellContent::Number(self.count_adjacent_mines(x, y));
+            }
+        }
+    }
+
+    fn count_adjacent_mines(&self, x: usize, y: usize) -> u8 {
+        let mut count = 0;
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                let (nx, ny) = (x as isize + dx, y as isize + dy);
+                if nx >= 0 && nx < self.width as isize && ny >= 0 && ny < self.height as isize {
+                    if self.board[ny as usize][nx as usize].content == CellContent::Mine {
+                        count += 1;
+                    }
+                }
+            }
+        }
+        count
+    }
+
+    fn reveal(&mut self, x: usize, y: usize) {
+        if x >= self.width || y >= self.height || self.board[y][x].state != CellState::Covered {
+            return;
+        }
+
+        if self.first_click {
+            self.place_mines(x, y);
+            self.first_click = false;
+        }
+
+        self.board[y][x].state = CellState::Revealed;
+        match self.board[y][x].content {
+            CellContent::Mine => self.game_state = GameState::Lost,
+            CellContent::Number(0) => {
+                for dy in -1..=1 {
+                    for dx in -1..=1 {
+                        let (nx, ny) = (x as isize + dx, y as isize + dy);
+                        if nx >= 0
+                            && nx < self.width as isize
+                            && ny >= 0
+                            && ny < self.height as isize
+                        {
+                            self.reveal(nx as usize, ny as usize);
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        self.check_win_condition();
+    }
+
+    fn flag(&mut self, x: usize, y: usize) {
+        if x < self.width && y < self.height && self.board[y][x].state != CellState::Revealed {
+            self.board[y][x].state = match self.board[y][x].state {
+                CellState::Covered => CellState::Flagged,
+                CellState::Flagged => CellState::Covered,
+                _ => self.board[y][x].state,
+            };
+        }
+    }
+
+    fn check_win_condition(&mut self) {
+        let non_mine_cells = self.width * self.height - self.num_mines;
+        let revealed_count = self
+            .board
+            .iter()
+            .flatten()
+            .filter(|c| c.state == CellState::Revealed)
+            .count();
+        if revealed_count == non_mine_cells {
+            self.game_state = GameState::Won;
+        }
+    }
+
+    fn move_cursor(&mut self, dx: isize, dy: isize) {
+        self.cursor_x = (self.cursor_x as isize + dx).clamp(0, self.width as isize - 1) as usize;
+        self.cursor_y = (self.cursor_y as isize + dy).clamp(0, self.height as isize - 1) as usize;
+    }
+
+    /// Gets the character and color for a cell, but not its formatting or cursor highlight.
+    fn get_cell_style(&self, x: usize, y: usize, show_all: bool) -> (char, Color) {
+        let cell = &self.board[y][x];
+
+        match cell.state {
+            CellState::Covered if !show_all => (COVERED, Color::DarkGrey),
+            CellState::Flagged if !show_all => (FLAG, Color::Red),
+            _ => match cell.content {
+                CellContent::Mine => (BOMB, Color::Magenta),
+                CellContent::Number(0) => (EMPTY, Color::White),
+                CellContent::Number(n) => (
+                    char::from_digit(n as u32, 10).unwrap_or('?'),
+                    match n {
+                        1 => Color::Blue,
+                        2 => Color::Green,
+                        3 => Color::Red,
+                        _ => Color::DarkYellow,
+                    },
+                ),
+            },
+        }
+    }
+
+    /// Redraws the entire screen using explicit cursor positioning for stability.
+    fn display(&self, stdout: &mut io::Stdout) -> Result<()> {
+        queue!(stdout, Clear(ClearType::All))?;
+
+        // --- Draw static text ---
+        queue!(
+            stdout,
+            cursor::MoveTo(0, 0),
+            SetForegroundColor(Color::Cyan),
+            Print("MINESWEEPER"),
+            cursor::MoveTo(0, 1),
+            SetForegroundColor(Color::DarkGrey),
+            Print("Controls: ←↑↓→ Move | R Reveal | F Flag | Q Quit")
+        )?;
+
+        // --- Draw game status ---
+        let flags_placed = self
+            .board
+            .iter()
+            .flatten()
+            .filter(|c| c.state == CellState::Flagged)
+            .count();
+        let status = match self.game_state {
+            GameState::Playing => format!("Mines: {} | Flags: {}", self.num_mines, flags_placed),
+            GameState::Won => "🎉 You Won! Press 'n' for a new game.".to_string(),
+            GameState::Lost => "💥 Game Over! Press 'n' for a new game.".to_string(),
+        };
+        queue!(
+            stdout,
+            cursor::MoveTo(0, 3),
+            SetForegroundColor(Color::White),
+            Print(status)
+        )?;
+
+        let show_all = self.game_state != GameState::Playing;
+
+        // --- Draw board with explicit cursor positioning ---
+        for y in 0..self.height {
+            for x in 0..self.width {
+                // Calculate the top-left corner of the cell on the screen
+                let screen_x = x as u16 * CELL_WIDTH + BOARD_OFFSET_X;
+                let screen_y = y as u16 + BOARD_OFFSET_Y;
+
+                // Determine cell style
+                let (char, fg_color) = self.get_cell_style(x, y, show_all);
+                let is_cursor = x == self.cursor_x && y == self.cursor_y;
+                let bg_color = if is_cursor && self.game_state == GameState::Playing {
+                    CURSOR_BG_COLOR
+                } else {
+                    Color::Black // Use a default background color
+                };
+
+                // Format the 3-character wide cell content
+                let display_string = format!(" {} ", char);
+
+                // Queue all commands for drawing one cell
+                queue!(
+                    stdout,
+                    cursor::MoveTo(screen_x, screen_y),
+                    SetForegroundColor(fg_color),
+                    SetBackgroundColor(bg_color),
+                    Print(display_string),
+                )?;
+
+                // Draw headers on the first pass
+                if x == 0 {
+                    queue!(
+                        stdout,
+                        cursor::MoveTo(BOARD_OFFSET_X - 2, screen_y),
+                        SetForegroundColor(Color::DarkCyan),
+                        SetBackgroundColor(Color::Black), // Reset background
+                        Print(y % 10)
+                    )?;
+                }
+                if y == 0 {
+                    // Center the header in the 3-wide cell
+                    queue!(
+                        stdout,
+                        cursor::MoveTo(screen_x + CELL_WIDTH / 2, BOARD_OFFSET_Y - 1),
+                        SetForegroundColor(Color::DarkCyan),
+                        SetBackgroundColor(Color::Black), // Reset background
+                        Print(x % 10)
+                    )?;
+                }
+            }
+        }
+
+        queue!(stdout, ResetColor)?; // Reset colors at the very end
+        stdout.flush()
+    }
+}
+
+fn main() -> Result<()> {
+    // Adjusted dimensions for a wider display
+    let width = 18;
+    let height = 10;
+    let num_mines = 25;
+
+    let mut game = Game::new(width, height, num_mines);
+    let mut stdout = io::stdout();
+
+    terminal::enable_raw_mode()?;
+    execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
+
+    let result = game_loop(&mut game, &mut stdout);
+
+    execute!(stdout, cursor::Show, terminal::LeaveAlternateScreen)?;
+    terminal::disable_raw_mode()?;
+
+    result
+}
+
+fn game_loop(game: &mut Game, stdout: &mut io::Stdout) -> Result<()> {
+    loop {
+        game.display(stdout)?;
+
+        if let Event::Key(KeyEvent { code, .. }) = event::read()? {
+            let is_game_over = game.game_state != GameState::Playing;
+            match code {
+                KeyCode::Char('q') | KeyCode::Esc => break,
+                KeyCode::Char('n') if is_game_over => {
+                    *game = Game::new(game.width, game.height, game.num_mines);
+                }
+                _ if is_game_over => {} // Ignore other input if game over
+                KeyCode::Up => game.move_cursor(0, -1),
+                KeyCode::Down => game.move_cursor(0, 1),
+                KeyCode::Left => game.move_cursor(-1, 0),
+                KeyCode::Right => game.move_cursor(1, 0),
+                KeyCode::Char('r') | KeyCode::Enter => game.reveal(game.cursor_x, game.cursor_y),
+                KeyCode::Char('f') | KeyCode::Char(' ') => game.flag(game.cursor_x, game.cursor_y),
+                _ => {}
+            }
+        }
+    }
+    Ok(())
+}
