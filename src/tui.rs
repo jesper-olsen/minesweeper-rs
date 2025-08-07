@@ -165,7 +165,7 @@ impl Tui {
         };
 
         const M: &str = "Press 'n' for a new game.";
-        let status = match self.game.game_state {
+        let status = match self.game.state {
             GameState::Playing => {
                 format!("Mines: {} | Flags: {}", self.game.num_mines, flags_placed)
             }
@@ -184,7 +184,7 @@ impl Tui {
             Print(status)
         )?;
 
-        let show_all = self.game.game_state != GameState::Playing;
+        let show_all = self.game.state != GameState::Playing;
 
         // --- Draw board with explicit cursor positioning ---
         for y in 0..self.game.height {
@@ -196,10 +196,10 @@ impl Tui {
                 // Determine cell style
                 let (char, fg_color) = self.get_cell_style(x, y, show_all);
                 let is_cursor = x == self.cursor_x && y == self.cursor_y;
-                let bg_color = if is_cursor && self.game.game_state == GameState::Playing {
+                let bg_color = if is_cursor && self.game.state == GameState::Playing {
                     CURSOR_BG_COLOR
                 } else {
-                    Color::Black // Use a default background color
+                    Color::Black
                 };
 
                 // Format the 3-character wide cell content
@@ -227,7 +227,7 @@ impl Tui {
             self.display()?;
 
             if let Event::Key(KeyEvent { code, .. }) = event::read()? {
-                let is_game_over = self.game.game_state != GameState::Playing;
+                let is_game_over = self.game.state != GameState::Playing;
                 match code {
                     KeyCode::Char('q') | KeyCode::Esc => break,
                     KeyCode::Char('?') => self.display_help()?,

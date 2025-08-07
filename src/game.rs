@@ -32,7 +32,7 @@ pub struct Game {
     pub width: usize,
     pub height: usize,
     pub num_mines: usize,
-    pub game_state: GameState,
+    pub state: GameState,
     first_click: bool,
     pub start_time: Option<Instant>,
     pub final_time: Option<Duration>,
@@ -56,7 +56,7 @@ impl Game {
             width,
             height,
             num_mines,
-            game_state: GameState::Playing,
+            state: GameState::Playing,
             first_click: true,
             start_time: None,
             final_time: None,
@@ -106,10 +106,13 @@ impl Game {
                     continue;
                 }
                 let (nx, ny) = (x as isize + dx, y as isize + dy);
-                if nx >= 0 && nx < self.width as isize && ny >= 0 && ny < self.height as isize {
-                    if self.board[ny as usize][nx as usize].content == CellContent::Mine {
-                        count += 1;
-                    }
+                if nx >= 0
+                    && nx < self.width as isize
+                    && ny >= 0
+                    && ny < self.height as isize
+                    && self.board[ny as usize][nx as usize].content == CellContent::Mine
+                {
+                    count += 1;
                 }
             }
         }
@@ -130,7 +133,7 @@ impl Game {
         self.board[y][x].state = CellState::Revealed;
         match self.board[y][x].content {
             CellContent::Mine => {
-                self.game_state = GameState::Lost;
+                self.state = GameState::Lost;
                 self.board[y][x].content = CellContent::Explosion;
                 if let Some(start) = self.start_time {
                     self.final_time = Some(start.elapsed());
@@ -174,7 +177,7 @@ impl Game {
             .filter(|c| c.state == CellState::Revealed)
             .count();
         if revealed_count == non_mine_cells {
-            self.game_state = GameState::Won;
+            self.state = GameState::Won;
             if self.final_time.is_none() {
                 if let Some(start) = self.start_time {
                     self.final_time = Some(start.elapsed());
