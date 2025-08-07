@@ -2,6 +2,8 @@
 
 A classic game of Minesweeper [1,2] for your terminal, written in Rust and built with `crossterm`.
 
+## Preview
+
 ![alt text](Assets/screenshot.png "Game UI")
 
 
