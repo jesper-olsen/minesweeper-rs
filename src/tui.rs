@@ -58,7 +58,7 @@ impl Tui {
 
     /// Gets the character and color for a cell, but not its formatting or cursor highlight.
     fn get_cell_style(&self, x: usize, y: usize, show_all: bool) -> (char, Color) {
-        let cell = &self.game.board[y][x];
+        let cell = self.game.get_cell(x, y);
 
         match cell.state {
             CellState::Covered if !show_all => (COVERED, Color::DarkGrey),
@@ -136,7 +136,10 @@ impl Tui {
     fn display(&mut self) -> Result<()> {
         //queue!(self.stdout, Clear(ClearType::All))?;
         // --- Draw static text ---
-        let name = format!("MINESWEEPER ({}x{})", self.game.width, self.game.height);
+        let name = format!(
+            "MINESWEEPER ({}x{}, {} mines)",
+            self.game.width, self.game.height, self.game.num_mines
+        );
         queue!(
             self.stdout,
             cursor::MoveTo(0, 0),
@@ -148,14 +151,6 @@ impl Tui {
         )?;
 
         // --- Draw game status ---
-        let flags_placed = self
-            .game
-            .board
-            .iter()
-            .flatten()
-            .filter(|c| c.state == CellState::Flagged)
-            .count();
-
         let elapsed_seconds = if let Some(duration) = self.game.final_time {
             duration.as_secs()
         } else if let Some(start) = self.game.start_time {
@@ -167,7 +162,13 @@ impl Tui {
         const M: &str = "Press 'n' for a new game.";
         let status = match self.game.state {
             GameState::Playing => {
-                format!("Mines: {} | Flags: {}", self.game.num_mines, flags_placed)
+                let flags_placed = self.game.count(CellState::Flagged);
+                let covered_cells = self.game.count(CellState::Covered);
+                // note - extra space at end to ensure last status is entirely cleared
+                format!(
+                    "Mines: {} | Flags: {flags_placed} | Covered: {covered_cells}    ",
+                    self.game.num_mines
+                )
             }
             GameState::Won => {
                 format!("🎉 You Won! Time: {elapsed_seconds}s. {M}")

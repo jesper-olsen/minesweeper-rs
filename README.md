@@ -35,6 +35,7 @@ You must have the Rust toolchain installed. You can install it via [rustup.rs](h
     The executable will be located at `target/release/minesweeper-rs`.
 
 ## Usage
+
 ```bash
 % cargo run --release -- --help
 

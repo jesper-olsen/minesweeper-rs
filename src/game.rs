@@ -28,7 +28,7 @@ pub enum GameState {
 }
 
 pub struct Game {
-    pub board: Vec<Vec<Cell>>,
+    board: Vec<Vec<Cell>>,
     pub width: usize,
     pub height: usize,
     pub num_mines: usize,
@@ -39,6 +39,10 @@ pub struct Game {
 }
 
 impl Game {
+    pub fn get_cell(&self, x: usize, y: usize) -> &Cell {
+        &self.board[y][x]
+    }
+
     pub fn new(width: usize, height: usize, num_mines: usize) -> Self {
         let board = vec![
             vec![
@@ -168,15 +172,17 @@ impl Game {
         }
     }
 
-    fn check_win_condition(&mut self) {
-        let non_mine_cells = self.width * self.height - self.num_mines;
-        let revealed_count = self
-            .board
+    pub fn count(&self, cell_state: CellState) -> usize {
+        self.board
             .iter()
             .flatten()
-            .filter(|c| c.state == CellState::Revealed)
-            .count();
-        if revealed_count == non_mine_cells {
+            .filter(|c| c.state == cell_state)
+            .count()
+    }
+
+    fn check_win_condition(&mut self) {
+        let non_mine_cells = self.width * self.height - self.num_mines;
+        if self.count(CellState::Revealed) == non_mine_cells {
             self.state = GameState::Won;
             if self.final_time.is_none() {
                 if let Some(start) = self.start_time {
