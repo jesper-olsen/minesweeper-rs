@@ -73,11 +73,11 @@ struct Game {
     width: usize,
     height: usize,
     num_mines: usize,
-    cursor_x: usize,
+    cursor_x: usize, // TODO: move to Tui?
     cursor_y: usize,
     game_state: GameState,
     first_click: bool,
-    start_time: Option<Instant>,
+    start_time: Option<Instant>, // TODO: move to Tui?
     final_time: Option<Duration>,
 }
 
@@ -111,11 +111,12 @@ impl Game {
     fn place_mines(&mut self, avoid_x: usize, avoid_y: usize) {
         let mut rng = rand::rng();
         let mut mines_placed = 0;
-
+        // TODO: return Err if fails to place mines
         while mines_placed < self.num_mines {
             let x = rng.random_range(0..self.width);
             let y = rng.random_range(0..self.height);
 
+            // no mines placed near first square
             if (x as isize - avoid_x as isize).abs() <= 1
                 && (y as isize - avoid_y as isize).abs() <= 1
             {
@@ -233,10 +234,24 @@ impl Game {
         self.cursor_x = ((self.cursor_x as isize + dx).rem_euclid(self.width as isize)) as usize;
         self.cursor_y = ((self.cursor_y as isize + dy).rem_euclid(self.height as isize)) as usize;
     }
+}
+
+struct Tui {
+    stdout: std::io::Stdout,
+    game: Game,
+}
+
+impl Tui {
+    pub fn new(game: Game) -> Result<Self> {
+        let mut stdout = io::stdout();
+        terminal::enable_raw_mode()?;
+        execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
+        Ok(Tui { stdout, game })
+    }
 
     /// Gets the character and color for a cell, but not its formatting or cursor highlight.
     fn get_cell_style(&self, x: usize, y: usize, show_all: bool) -> (char, Color) {
-        let cell = &self.board[y][x];
+        let cell = &self.game.board[y][x];
 
         match cell.state {
             CellState::Covered if !show_all => (COVERED, Color::DarkGrey),
@@ -254,7 +269,7 @@ impl Game {
                 CellContent::Number(7) => ('7', Color::Black),
                 CellContent::Number(8) => ('8', Color::DarkGrey),
                 CellContent::Number(n) => (
-                    // Should ideally not be reached
+                    // unreachable - at most 8 neighbours
                     char::from_digit(n as u32, 10).unwrap_or('?'),
                     Color::Yellow,
                 ),
@@ -262,8 +277,8 @@ impl Game {
         }
     }
 
-    fn display_help(&self, stdout: &mut io::Stdout) -> Result<()> {
-        queue!(stdout, Clear(ClearType::All))?;
+    fn display_help(&mut self) -> Result<()> {
+        queue!(self.stdout, Clear(ClearType::All))?;
 
         let help_content = [
             ("MINESWEEPER - HELP", Color::Cyan),
@@ -280,7 +295,7 @@ impl Game {
             ("", Color::White),
             ("SYMBOLS:", Color::Yellow),
             (
-                &format!("  {COVERED:>3} Covered     {FLAG} Flagged     {EMPTY:>2} Empty"),
+                &format!("  {COVERED:>3} Covered     {FLAG} Flagged     {EMPTY:<2}Empty"),
                 Color::White,
             ),
             (
@@ -297,27 +312,27 @@ impl Game {
         ];
         for (i, (text, color)) in help_content.iter().enumerate() {
             queue!(
-                stdout,
+                self.stdout,
                 cursor::MoveTo(2, i as u16 + 1),
                 SetForegroundColor(*color),
                 Print(text)
             )?;
         }
 
-        queue!(stdout, ResetColor)?;
-        stdout.flush()?;
+        queue!(self.stdout, ResetColor)?;
+        self.stdout.flush()?;
         let _ = event::read()?;
         Ok(())
     }
 
     /// Redraws the entire screen using explicit cursor positioning for stability.
-    fn display(&self, stdout: &mut io::Stdout) -> Result<()> {
-        queue!(stdout, Clear(ClearType::All))?;
+    fn display(&mut self) -> Result<()> {
+        queue!(self.stdout, Clear(ClearType::All))?;
 
         // --- Draw static text ---
-        let name = format!("MINESWEEPER ({}x{})", self.width, self.height);
+        let name = format!("MINESWEEPER ({}x{})", self.game.width, self.game.height);
         queue!(
-            stdout,
+            self.stdout,
             cursor::MoveTo(0, 0),
             SetForegroundColor(Color::Cyan),
             Print(name),
@@ -328,23 +343,26 @@ impl Game {
 
         // --- Draw game status ---
         let flags_placed = self
+            .game
             .board
             .iter()
             .flatten()
             .filter(|c| c.state == CellState::Flagged)
             .count();
 
-        let elapsed_seconds = if let Some(duration) = self.final_time {
+        let elapsed_seconds = if let Some(duration) = self.game.final_time {
             duration.as_secs()
-        } else if let Some(start) = self.start_time {
+        } else if let Some(start) = self.game.start_time {
             start.elapsed().as_secs()
         } else {
             0
         };
 
         const M: &str = "Press 'n' for a new game.";
-        let status = match self.game_state {
-            GameState::Playing => format!("Mines: {} | Flags: {}", self.num_mines, flags_placed),
+        let status = match self.game.game_state {
+            GameState::Playing => {
+                format!("Mines: {} | Flags: {}", self.game.num_mines, flags_placed)
+            }
             GameState::Won => {
                 format!("🎉 You Won! Time: {elapsed_seconds}s. {M}")
             }
@@ -354,25 +372,25 @@ impl Game {
         };
 
         queue!(
-            stdout,
+            self.stdout,
             cursor::MoveTo(0, 3),
             SetForegroundColor(Color::White),
             Print(status)
         )?;
 
-        let show_all = self.game_state != GameState::Playing;
+        let show_all = self.game.game_state != GameState::Playing;
 
         // --- Draw board with explicit cursor positioning ---
-        for y in 0..self.height {
-            for x in 0..self.width {
+        for y in 0..self.game.height {
+            for x in 0..self.game.width {
                 // Calculate the top-left corner of the cell on the screen
                 let screen_x = x as u16 * CELL_WIDTH + BOARD_OFFSET_X;
                 let screen_y = y as u16 + BOARD_OFFSET_Y;
 
                 // Determine cell style
                 let (char, fg_color) = self.get_cell_style(x, y, show_all);
-                let is_cursor = x == self.cursor_x && y == self.cursor_y;
-                let bg_color = if is_cursor && self.game_state == GameState::Playing {
+                let is_cursor = x == self.game.cursor_x && y == self.game.cursor_y;
+                let bg_color = if is_cursor && self.game.game_state == GameState::Playing {
                     CURSOR_BG_COLOR
                 } else {
                     Color::Black // Use a default background color
@@ -383,7 +401,7 @@ impl Game {
 
                 // Queue all commands for drawing one cell
                 queue!(
-                    stdout,
+                    self.stdout,
                     cursor::MoveTo(screen_x, screen_y),
                     SetForegroundColor(fg_color),
                     SetBackgroundColor(bg_color),
@@ -394,35 +412,47 @@ impl Game {
             }
         }
 
-        queue!(stdout, ResetColor)?; // Reset colors at the very end
-        stdout.flush()
+        queue!(self.stdout, ResetColor)?; // Reset colors at the very end
+        self.stdout.flush()
+    }
+
+    fn game_loop(&mut self) -> Result<()> {
+        loop {
+            self.display()?;
+
+            if let Event::Key(KeyEvent { code, .. }) = event::read()? {
+                let is_game_over = self.game.game_state != GameState::Playing;
+                match code {
+                    KeyCode::Char('q') | KeyCode::Esc => break,
+                    KeyCode::Char('?') => self.display_help()?,
+                    KeyCode::Char('n') if is_game_over => {
+                        self.game =
+                            Game::new(self.game.width, self.game.height, self.game.num_mines);
+                    }
+                    _ if is_game_over => {} // Ignore other input if game over
+                    KeyCode::Up | KeyCode::Char('k') => self.game.move_cursor(0, -1),
+                    KeyCode::Down | KeyCode::Char('j') => self.game.move_cursor(0, 1),
+                    KeyCode::Left | KeyCode::Char('h') => self.game.move_cursor(-1, 0),
+                    KeyCode::Right | KeyCode::Char('l') => self.game.move_cursor(1, 0),
+                    KeyCode::Char('r') | KeyCode::Enter => {
+                        self.game.reveal(self.game.cursor_x, self.game.cursor_y)
+                    }
+                    KeyCode::Char('f') | KeyCode::Char(' ') => {
+                        self.game.flag(self.game.cursor_x, self.game.cursor_y)
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
     }
 }
 
-fn game_loop(game: &mut Game, stdout: &mut io::Stdout) -> Result<()> {
-    loop {
-        game.display(stdout)?;
-
-        if let Event::Key(KeyEvent { code, .. }) = event::read()? {
-            let is_game_over = game.game_state != GameState::Playing;
-            match code {
-                KeyCode::Char('q') | KeyCode::Esc => break,
-                KeyCode::Char('?') => game.display_help(stdout)?,
-                KeyCode::Char('n') if is_game_over => {
-                    *game = Game::new(game.width, game.height, game.num_mines);
-                }
-                _ if is_game_over => {} // Ignore other input if game over
-                KeyCode::Up | KeyCode::Char('k') => game.move_cursor(0, -1),
-                KeyCode::Down | KeyCode::Char('j') => game.move_cursor(0, 1),
-                KeyCode::Left | KeyCode::Char('h') => game.move_cursor(-1, 0),
-                KeyCode::Right | KeyCode::Char('l') => game.move_cursor(1, 0),
-                KeyCode::Char('r') | KeyCode::Enter => game.reveal(game.cursor_x, game.cursor_y),
-                KeyCode::Char('f') | KeyCode::Char(' ') => game.flag(game.cursor_x, game.cursor_y),
-                _ => {}
-            }
-        }
+impl Drop for Tui {
+    fn drop(&mut self) {
+        let _ = execute!(self.stdout, cursor::Show, terminal::LeaveAlternateScreen);
+        let _ = terminal::disable_raw_mode();
     }
-    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -432,16 +462,9 @@ fn main() -> Result<()> {
         println!("Too many mines!");
         std::process::exit(0);
     }
-    let mut game = Game::new(args.width, args.height, args.num_mines);
-    let mut stdout = io::stdout();
 
-    terminal::enable_raw_mode()?;
-    execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
+    let game = Game::new(args.width, args.height, args.num_mines);
+    let mut tui = Tui::new(game)?;
 
-    game_loop(&mut game, &mut stdout)?;
-
-    execute!(stdout, cursor::Show, terminal::LeaveAlternateScreen)?;
-    terminal::disable_raw_mode()?;
-
-    Ok(())
+    tui.game_loop()
 }
