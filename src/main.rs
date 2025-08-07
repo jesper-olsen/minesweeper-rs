@@ -139,8 +139,8 @@ impl Game {
 
     fn count_adjacent_mines(&self, x: usize, y: usize) -> u8 {
         let mut count = 0;
-        for dy in -1..1 {
-            for dx in -1..1 {
+        for dy in -1..=1 {
+            for dx in -1..=1 {
                 if dx == 0 && dy == 0 {
                     continue;
                 }
@@ -232,11 +232,17 @@ impl Game {
                 CellContent::Explosion => (EXPLOSION, Color::Magenta),
                 CellContent::Number(0) => (EMPTY, Color::White),
                 CellContent::Number(1) => ('1', Color::Blue),
-                CellContent::Number(2) => ('2', Color::Green),
+                CellContent::Number(2) => ('2', Color::DarkGreen),
                 CellContent::Number(3) => ('3', Color::Red),
+                CellContent::Number(4) => ('4', Color::DarkBlue),
+                CellContent::Number(5) => ('5', Color::DarkRed),
+                CellContent::Number(6) => ('6', Color::DarkCyan),
+                CellContent::Number(7) => ('7', Color::Black),
+                CellContent::Number(8) => ('8', Color::DarkGrey),
                 CellContent::Number(n) => (
+                    // Should ideally not be reached
                     char::from_digit(n as u32, 10).unwrap_or('?'),
-                    Color::DarkYellow,
+                    Color::Yellow,
                 ),
             },
         }
@@ -409,10 +415,10 @@ fn main() -> Result<()> {
     terminal::enable_raw_mode()?;
     execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
 
-    let result = game_loop(&mut game, &mut stdout);
+    game_loop(&mut game, &mut stdout)?;
 
     execute!(stdout, cursor::Show, terminal::LeaveAlternateScreen)?;
     terminal::disable_raw_mode()?;
 
-    result
+    Ok(())
 }
