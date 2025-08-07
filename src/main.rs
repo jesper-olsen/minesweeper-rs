@@ -8,6 +8,7 @@ use crossterm::{
 };
 use rand::Rng;
 use std::io::{self, Result, Write};
+use std::time::{Duration, Instant};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -76,6 +77,8 @@ struct Game {
     cursor_y: usize,
     game_state: GameState,
     first_click: bool,
+    start_time: Option<Instant>,
+    final_time: Option<Duration>,
 }
 
 impl Game {
@@ -100,6 +103,8 @@ impl Game {
             cursor_y: height / 2,
             game_state: GameState::Playing,
             first_click: true,
+            start_time: None,
+            final_time: None,
         }
     }
 
@@ -163,6 +168,7 @@ impl Game {
         if self.first_click {
             self.place_mines(x, y);
             self.first_click = false;
+            self.start_time = Some(Instant::now());
         }
 
         self.board[y][x].state = CellState::Revealed;
@@ -170,6 +176,9 @@ impl Game {
             CellContent::Mine => {
                 self.game_state = GameState::Lost;
                 self.board[y][x].content = CellContent::Explosion;
+                if let Some(start) = self.start_time {
+                    self.final_time = Some(start.elapsed());
+                }
             }
             CellContent::Number(0) => {
                 for dy in -1..=1 {
@@ -210,6 +219,11 @@ impl Game {
             .count();
         if revealed_count == non_mine_cells {
             self.game_state = GameState::Won;
+            if self.final_time.is_none() {
+                if let Some(start) = self.start_time {
+                    self.final_time = Some(start.elapsed());
+                }
+            }
         }
     }
 
@@ -266,17 +280,11 @@ impl Game {
             ("", Color::White),
             ("SYMBOLS:", Color::Yellow),
             (
-                &format!(
-                    "  {:3} Covered    {}  Flagged     {:2}  Empty",
-                    COVERED, FLAG, EMPTY
-                ),
+                &format!("  {COVERED:>3} Covered     {FLAG} Flagged     {EMPTY:>2} Empty"),
                 Color::White,
             ),
             (
-                &format!(
-                    "  1-8 Mine count {}  Mine        {}  Explosion",
-                    BOMB, EXPLOSION
-                ),
+                &format!("  1-8 Mine count  {BOMB} Mine        {EXPLOSION} Explosion"),
                 Color::White,
             ),
             ("", Color::White),
@@ -325,11 +333,26 @@ impl Game {
             .flatten()
             .filter(|c| c.state == CellState::Flagged)
             .count();
+
+        let elapsed_seconds = if let Some(duration) = self.final_time {
+            duration.as_secs()
+        } else if let Some(start) = self.start_time {
+            start.elapsed().as_secs()
+        } else {
+            0
+        };
+
+        const M: &str = "Press 'n' for a new game.";
         let status = match self.game_state {
             GameState::Playing => format!("Mines: {} | Flags: {}", self.num_mines, flags_placed),
-            GameState::Won => "🎉 You Won! Press 'n' for a new game.".to_string(),
-            GameState::Lost => "💥 Game Over! Press 'n' for a new game.".to_string(),
+            GameState::Won => {
+                format!("🎉 You Won! Time: {elapsed_seconds}s. {M}")
+            }
+            GameState::Lost => {
+                format!("💥 Game Over! Time: {elapsed_seconds}s. {M}")
+            }
         };
+
         queue!(
             stdout,
             cursor::MoveTo(0, 3),
@@ -366,7 +389,7 @@ impl Game {
                     SetBackgroundColor(bg_color),
                     Print("   "), // clear
                     cursor::MoveTo(screen_x, screen_y),
-                    Print(display_string), // print
+                    Print(display_string),
                 )?;
             }
         }
