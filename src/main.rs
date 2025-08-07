@@ -6,7 +6,6 @@ use crossterm::{
     style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
     terminal::{self, Clear, ClearType},
 };
-use rand::Rng;
 use std::io::{self, Result, Write};
 use std::time::{Duration, Instant};
 
@@ -336,8 +335,7 @@ impl Tui {
 
     /// Redraws the entire screen using explicit cursor positioning for stability.
     fn display(&mut self) -> Result<()> {
-        queue!(self.stdout, Clear(ClearType::All))?;
-
+        //queue!(self.stdout, Clear(ClearType::All))?;
         // --- Draw static text ---
         let name = format!("MINESWEEPER ({}x{})", self.game.width, self.game.height);
         queue!(
