@@ -35,6 +35,18 @@ You must have the Rust toolchain installed. You can install it via [rustup.rs](h
     The executable will be located at `target/release/minesweeper-rs`.
 
 ## Usage
+```bash
+% cargo run --release -- --help
+
+Usage: minesweeper-rs [OPTIONS]
+
+Options:
+      --width <WIDTH>          number of columns [default: 18]
+      --height <HEIGHT>        number of rows [default: 10]
+      --num-mines <NUM_MINES>  number of mines [default: 25]
+  -h, --help                   Print help
+  -V, --version                Print version
+```
 
 Run the executable directly to start a game with default settings:
 
