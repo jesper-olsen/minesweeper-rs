@@ -1,0 +1,60 @@
+# minesweeper-rs
+
+[![Build Status](https://github.com/jesper-olsen/minesweeper-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/jesper-olsen/minesweeper-rs/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A classic game of Minesweeper [1,2] for your terminal, written in Rust and built with `crossterm`.
+
+## Preview
+
+It's fast, responsive, and works in any modern terminal.
+
+![alt text](Assets/screenshot.png "Game UI")
+
+
+## Features
+
+-   **Configurable Board:** Set the width, height, and number of mines.
+-   **Vim Keybindings:** Navigate with `h`, `j`, `k`, `l` in addition to arrow keys.
+-   **Guaranteed Safe First Click:** You will never hit a mine on your first move.
+-   **In-Game Help:** Press `?` anytime to see the controls.
+-   **Clean & Responsive UI:** Built with `crossterm` for a smooth, flicker-free experience.
+
+## References
+
+1. [Wikipedia](https://en.wikipedia.org/wiki/Minesweeper_(video_game)
+2. [minesweeper.com](https://minesweepergame.com/)
+
+
+## Installation
+
+
+You must have the Rust toolchain installed. You can install it via [rustup.rs](https://rustup.rs/).
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/jesper-olsen/minesweeper-rs.git
+    cd minesweeper-rs
+    ```
+
+2.  **Build the release binary:**
+    ```bash
+    cargo build --release
+    ```
+    The executable will be located at `target/release/minesweeper-rs`.
+
+## Usage
+
+Run the executable directly to start a game with default settings:
+
+```bash
+./target/release/minesweeper-rs
+Or, customize the board size and mine count:
+
+```bash
+# A large board for experts
+./target/release/minesweeper-rs --width 30 --height 20 --num-mines 99
+```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
