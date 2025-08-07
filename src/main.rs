@@ -106,23 +106,23 @@ impl Game {
 
     fn place_mines(&mut self, avoid_x: usize, avoid_y: usize) {
         let mut rng = rand::rng();
-        let mut mines_placed = 0;
-        // TODO: return Err if fails to place mines
-        while mines_placed < self.num_mines {
-            let x = rng.random_range(0..self.width);
-            let y = rng.random_range(0..self.height);
+        let mut possible_positions: Vec<(usize, usize)> = (0..self.height)
+            .flat_map(|y| (0..self.width).map(move |x| (x, y)))
+            .collect();
 
-            // no mines placed near first square
-            if (x as isize - avoid_x as isize).abs() <= 1
-                && (y as isize - avoid_y as isize).abs() <= 1
-            {
-                continue;
-            }
+        // Remove the 3x3 area around the first click
+        possible_positions.retain(|(x, y)| {
+            !(((*x as isize - avoid_x as isize).abs() <= 1)
+                && ((*y as isize - avoid_y as isize).abs() <= 1))
+        });
 
-            if self.board[y][x].content == CellContent::Number(0) {
-                self.board[y][x].content = CellContent::Mine;
-                mines_placed += 1;
-            }
+        // Shuffle the valid positions
+        use rand::seq::SliceRandom;
+        possible_positions.shuffle(&mut rng);
+
+        // Take the required number of mines from the shuffled list
+        for (x, y) in possible_positions.iter().take(self.num_mines) {
+            self.board[*y][*x].content = CellContent::Mine;
         }
 
         self.calculate_numbers();
@@ -248,8 +248,10 @@ impl Tui {
     }
 
     fn move_cursor(&mut self, dx: isize, dy: isize) {
+        // edges are hard - don't move cursor over
         // self.cursor_x = (self.cursor_x as isize + dx).clamp(0, self.width as isize - 1) as usize;
         // self.cursor_y = (self.cursor_y as isize + dy).clamp(0, self.height as isize - 1) as usize;
+        // wrap around when cursor moves over edge
         self.cursor_x =
             ((self.cursor_x as isize + dx).rem_euclid(self.game.width as isize)) as usize;
         self.cursor_y =
