@@ -1,13 +1,6 @@
 # minesweeper-rs
 
-[![Build Status](https://github.com/jesper-olsen/minesweeper-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/jesper-olsen/minesweeper-rs/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 A classic game of Minesweeper [1,2] for your terminal, written in Rust and built with `crossterm`.
-
-## Preview
-
-It's fast, responsive, and works in any modern terminal.
 
 ![alt text](Assets/screenshot.png "Game UI")
 
@@ -28,7 +21,6 @@ It's fast, responsive, and works in any modern terminal.
 
 ## Installation
 
-
 You must have the Rust toolchain installed. You can install it via [rustup.rs](https://rustup.rs/).
 1.  **Clone the repository:**
     ```bash
@@ -48,6 +40,8 @@ Run the executable directly to start a game with default settings:
 
 ```bash
 ./target/release/minesweeper-rs
+```
+
 Or, customize the board size and mine count:
 
 ```bash
