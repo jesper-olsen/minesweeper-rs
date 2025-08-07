@@ -73,11 +73,9 @@ struct Game {
     width: usize,
     height: usize,
     num_mines: usize,
-    cursor_x: usize, // TODO: move to Tui?
-    cursor_y: usize,
     game_state: GameState,
     first_click: bool,
-    start_time: Option<Instant>, // TODO: move to Tui?
+    start_time: Option<Instant>,
     final_time: Option<Duration>,
 }
 
@@ -99,8 +97,6 @@ impl Game {
             width,
             height,
             num_mines,
-            cursor_x: width / 2,
-            cursor_y: height / 2,
             game_state: GameState::Playing,
             first_click: true,
             start_time: None,
@@ -227,17 +223,12 @@ impl Game {
             }
         }
     }
-
-    fn move_cursor(&mut self, dx: isize, dy: isize) {
-        // self.cursor_x = (self.cursor_x as isize + dx).clamp(0, self.width as isize - 1) as usize;
-        // self.cursor_y = (self.cursor_y as isize + dy).clamp(0, self.height as isize - 1) as usize;
-        self.cursor_x = ((self.cursor_x as isize + dx).rem_euclid(self.width as isize)) as usize;
-        self.cursor_y = ((self.cursor_y as isize + dy).rem_euclid(self.height as isize)) as usize;
-    }
 }
 
 struct Tui {
     stdout: std::io::Stdout,
+    cursor_x: usize,
+    cursor_y: usize,
     game: Game,
 }
 
@@ -246,7 +237,23 @@ impl Tui {
         let mut stdout = io::stdout();
         terminal::enable_raw_mode()?;
         execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
-        Ok(Tui { stdout, game })
+        let cursor_x = game.width / 2;
+        let cursor_y = game.height / 2;
+        Ok(Tui {
+            stdout,
+            game,
+            cursor_x,
+            cursor_y,
+        })
+    }
+
+    fn move_cursor(&mut self, dx: isize, dy: isize) {
+        // self.cursor_x = (self.cursor_x as isize + dx).clamp(0, self.width as isize - 1) as usize;
+        // self.cursor_y = (self.cursor_y as isize + dy).clamp(0, self.height as isize - 1) as usize;
+        self.cursor_x =
+            ((self.cursor_x as isize + dx).rem_euclid(self.game.width as isize)) as usize;
+        self.cursor_y =
+            ((self.cursor_y as isize + dy).rem_euclid(self.game.height as isize)) as usize;
     }
 
     /// Gets the character and color for a cell, but not its formatting or cursor highlight.
@@ -389,7 +396,7 @@ impl Tui {
 
                 // Determine cell style
                 let (char, fg_color) = self.get_cell_style(x, y, show_all);
-                let is_cursor = x == self.game.cursor_x && y == self.game.cursor_y;
+                let is_cursor = x == self.cursor_x && y == self.cursor_y;
                 let bg_color = if is_cursor && self.game.game_state == GameState::Playing {
                     CURSOR_BG_COLOR
                 } else {
@@ -430,15 +437,15 @@ impl Tui {
                             Game::new(self.game.width, self.game.height, self.game.num_mines);
                     }
                     _ if is_game_over => {} // Ignore other input if game over
-                    KeyCode::Up | KeyCode::Char('k') => self.game.move_cursor(0, -1),
-                    KeyCode::Down | KeyCode::Char('j') => self.game.move_cursor(0, 1),
-                    KeyCode::Left | KeyCode::Char('h') => self.game.move_cursor(-1, 0),
-                    KeyCode::Right | KeyCode::Char('l') => self.game.move_cursor(1, 0),
+                    KeyCode::Up | KeyCode::Char('k') => self.move_cursor(0, -1),
+                    KeyCode::Down | KeyCode::Char('j') => self.move_cursor(0, 1),
+                    KeyCode::Left | KeyCode::Char('h') => self.move_cursor(-1, 0),
+                    KeyCode::Right | KeyCode::Char('l') => self.move_cursor(1, 0),
                     KeyCode::Char('r') | KeyCode::Enter => {
-                        self.game.reveal(self.game.cursor_x, self.game.cursor_y)
+                        self.game.reveal(self.cursor_x, self.cursor_y)
                     }
                     KeyCode::Char('f') | KeyCode::Char(' ') => {
-                        self.game.flag(self.game.cursor_x, self.game.cursor_y)
+                        self.game.flag(self.cursor_x, self.cursor_y)
                     }
                     _ => {}
                 }
