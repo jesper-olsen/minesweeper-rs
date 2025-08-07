@@ -20,7 +20,7 @@ const COVERED: char = '#';
 const EMPTY: char = '.';
 
 // Offsets for drawing the board on the screen
-const BOARD_OFFSET_X: u16 = 3;
+const BOARD_OFFSET_X: u16 = 2;
 const BOARD_OFFSET_Y: u16 = 5;
 
 pub struct Tui {
@@ -137,7 +137,7 @@ impl Tui {
         //queue!(self.stdout, Clear(ClearType::All))?;
         // --- Draw static text ---
         let name = format!(
-            "MINESWEEPER ({}x{}, {} mines)",
+            "{BOMB} MINESWEEPER{BOMB}  ({}x{}, {} mines)",
             self.game.width, self.game.height, self.game.num_mines
         );
         queue!(
@@ -166,7 +166,7 @@ impl Tui {
                 let covered_cells = self.game.count(CellState::Covered);
                 // note - extra space at end to ensure last status is entirely cleared
                 format!(
-                    "Mines: {} | Flags: {flags_placed} | Covered: {covered_cells}    ",
+                    "Mines: {} | Flags: {flags_placed} | Covered: {covered_cells}              ",
                     self.game.num_mines
                 )
             }
