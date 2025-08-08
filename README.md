@@ -18,7 +18,7 @@ A classic game of Minesweeper [1,2] for the terminal, written in Rust and built 
 ## Installation
 
 1. **Install Rust via [rustup.rs](https://rustup.rs/)**:
-2.  **Clone the repository:**
+2. **Clone the repository:**
     ```bash
     git clone https://github.com/jesper-olsen/minesweeper-rs.git
     cd minesweeper-rs
@@ -50,7 +50,8 @@ Run the executable directly to start a game with default settings:
 ./target/release/minesweeper-rs
 ```
 
-![alt text](Assets/screenshot.png "Game UI")
+| ![Game UI](Assets/screenshot.png) |
+| --- |
 
 
 ## License
