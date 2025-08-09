@@ -13,6 +13,9 @@ Or try intermediate
 cargo run --release -- -d intermediate
 ```
 
+| ![Game UI](Assets/screenshot.png) |
+| --- |
+
 
 ## Features
 
@@ -67,13 +70,6 @@ Available difficulties:
   intermediate - 16x16, 40 mines (16%)
   expert       - 30x16, 99 mines (21%)
 ```
-
-```bash
-% cargo run --release -- --difficulty intermediate
-```
-
-| ![Game UI](Assets/screenshot.png) |
-| --- |
 
 
 ## License
