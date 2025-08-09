@@ -1,37 +1,75 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use std::io::Result;
 pub mod game;
 pub mod tui;
 
+#[derive(ValueEnum, Clone, Debug)]
+enum Difficulty {
+    Beginner,
+    Intermediate,
+    Expert,
+}
+
+impl Difficulty {
+    fn dimensions(&self) -> (usize, usize, usize) {
+        match self {
+            Difficulty::Beginner => (9, 9, 10),
+            Difficulty::Intermediate => (16, 16, 40),
+            Difficulty::Expert => (30, 16, 99),
+        }
+    }
+}
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(long, default_value_t = 18)]
-    /// number of columns
+    #[arg(short, long, value_enum)]
+    /// Use a classic difficulty preset (overrides width/height/mines)
+    difficulty: Option<Difficulty>,
+
+    #[arg(long, default_value_t = 9)]
+    /// Number of columns (ignored if difficulty is set)
     width: usize,
 
-    #[arg(long, default_value_t = 10)]
-    /// number of rows
+    #[arg(long, default_value_t = 9)]
+    /// Number of rows (ignored if difficulty is set)
     height: usize,
 
-    #[arg(long, default_value_t = 25)]
-    /// number of mines
+    #[arg(long, default_value_t = 10)]
+    /// Number of mines (ignored if difficulty is set)
     num_mines: usize,
+
+    #[arg(long)]
+    /// List available difficulty presets and exit
+    list_difficulties: bool,
 }
 
-// Levels in classic minesweeper (Windows 3.1/95):
-// * Beginner 9 × 9, 10 mines (8.1%)
-// * Intermediate 16 × 16, 40 mines (15.6%)
-// * Expert	30 × 16, 99 mines (20.6%)
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    if args.width * args.height <= args.num_mines {
-        println!("Too many mines!");
+    if args.list_difficulties {
+        println!("Available difficulties:");
+        println!("  beginner     - 9x9, 10 mines (8%)");
+        println!("  intermediate - 16x16, 40 mines (16%)");
+        println!("  expert       - 30x16, 99 mines (21%)");
         std::process::exit(0);
     }
 
-    let game = game::Game::new(args.width, args.height, args.num_mines);
+    let (width, height, num_mines) = if let Some(difficulty) = args.difficulty {
+        difficulty.dimensions()
+    } else {
+        (args.width, args.height, args.num_mines)
+    };
+
+    if width * height <= num_mines + 9 {
+        println!(
+            "Error: Too many mines! Need at least {min_cells} cells for {num_mines} mines (including 9 mine-free cells around first click).",
+            min_cells = num_mines + 10
+        );
+        std::process::exit(1);
+    }
+
+    let game = game::Game::new(width, height, num_mines);
     let mut tui = tui::Tui::new(game)?;
 
     tui.game_loop()

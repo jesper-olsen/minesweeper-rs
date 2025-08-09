@@ -2,16 +2,25 @@
 
 A classic game of Minesweeper [1,2] for the terminal, written in Rust and built with `crossterm`.
 
+## Quick Start
+```bash
+# Play beginner difficulty (default)
+cargo run --release
+
+# Or try intermediate
+cargo run --release -- -d intermediate
+
 ## Features
 
 -   **Configurable Board:** Set the width, height, and number of mines.
 -   **Vim Keybindings:** Navigate with `h`, `j`, `k`, `l` in addition to arrow keys.
 -   **Safe First Click:** Never hit a mine on the first move.
 -   **In-Game Help:** Press `?` anytime to see the controls.
+-   **Smart Mine Validation:** Automatically prevents impossible configurations.
 
 ## References
 
-1. [Wikipedia](https://en.wikipedia.org/wiki/Minesweeper_(video_game)
+1. [Wikipedia](https://en.wikipedia.org/wiki/Minesweeper_(video_game))
 2. [minesweeper.com](https://minesweepergame.com/)
 
 
@@ -32,22 +41,30 @@ A classic game of Minesweeper [1,2] for the terminal, written in Rust and built 
 ## Usage
 
 ```bash
-% cargo run --release -- --help
-
 Usage: minesweeper-rs [OPTIONS]
 
 Options:
-      --width <WIDTH>          number of columns [default: 18]
-      --height <HEIGHT>        number of rows [default: 10]
-      --num-mines <NUM_MINES>  number of mines [default: 25]
-  -h, --help                   Print help
-  -V, --version                Print version
+  -d, --difficulty <DIFFICULTY>  Use a classic difficulty preset (overrides width/height/mines) [possible values: beginner, intermediate, expert]
+      --width <WIDTH>            Number of columns (ignored if difficulty is set) [default: 9]
+      --height <HEIGHT>          Number of rows (ignored if difficulty is set) [default: 9]
+      --num-mines <NUM_MINES>    Number of mines (ignored if difficulty is set) [default: 10]
+      --list-difficulties        List available difficulty presets and exit
+  -h, --help                     Print help
+  -V, --version                  Print version
 ```
 
-Run the executable directly to start a game with default settings:
+```bash
+minesweeper-rs % cargo run --release -- --list-difficulties
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running `target/debug/minesweeper-rs --list-difficulties`
+Available difficulties:
+  beginner     - 9x9, 10 mines (8%)
+  intermediate - 16x16, 40 mines (16%)
+  expert       - 30x16, 99 mines (21%)
+```
 
 ```bash
-./target/release/minesweeper-rs
+minesweeper-rs % cargo run --release -- --difficulty intermediate
 ```
 
 | ![Game UI](Assets/screenshot.png) |
