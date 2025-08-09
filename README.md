@@ -10,6 +10,7 @@ cargo run --release
 # Or try intermediate
 cargo run --release -- -d intermediate
 
+
 ## Features
 
 -   **Configurable Board:** Set the width, height, and number of mines.
@@ -17,6 +18,7 @@ cargo run --release -- -d intermediate
 -   **Safe First Click:** Never hit a mine on the first move.
 -   **In-Game Help:** Press `?` anytime to see the controls.
 -   **Smart Mine Validation:** Automatically prevents impossible configurations.
+
 
 ## References
 
@@ -38,6 +40,7 @@ cargo run --release -- -d intermediate
     ```
     The executable will be located at `target/release/minesweeper-rs`.
 
+
 ## Usage
 
 ```bash
@@ -55,8 +58,7 @@ Options:
 
 ```bash
 minesweeper-rs % cargo run --release -- --list-difficulties
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
-     Running `target/debug/minesweeper-rs --list-difficulties`
+
 Available difficulties:
   beginner     - 9x9, 10 mines (8%)
   intermediate - 16x16, 40 mines (16%)
