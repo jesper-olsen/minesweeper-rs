@@ -60,7 +60,7 @@ Options:
 ```
 
 ```bash
-minesweeper-rs % cargo run --release -- --list-difficulties
+% cargo run --release -- --list-difficulties
 
 Available difficulties:
   beginner     - 9x9, 10 mines (8%)
@@ -69,7 +69,7 @@ Available difficulties:
 ```
 
 ```bash
-minesweeper-rs % cargo run --release -- --difficulty intermediate
+% cargo run --release -- --difficulty intermediate
 ```
 
 | ![Game UI](Assets/screenshot.png) |
