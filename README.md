@@ -3,12 +3,15 @@
 A classic game of Minesweeper [1,2] for the terminal, written in Rust and built with `crossterm`.
 
 ## Quick Start
+Play beginner difficulty (default)
 ```bash
-# Play beginner difficulty (default)
 cargo run --release
+```
 
-# Or try intermediate
+Or try intermediate
+```bash
 cargo run --release -- -d intermediate
+```
 
 
 ## Features
