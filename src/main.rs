@@ -19,6 +19,10 @@ struct Args {
     num_mines: usize,
 }
 
+// Levels in classic minesweeper (Windows 3.1/95):
+// * Beginner 9 × 9, 10 mines (8.1%)
+// * Intermediate 16 × 16, 40 mines (15.6%)
+// * Expert	30 × 16, 99 mines (20.6%)
 fn main() -> Result<()> {
     let args = Args::parse();
 
