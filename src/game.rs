@@ -28,7 +28,7 @@ pub enum GameState {
 }
 
 pub struct Game {
-    board: Vec<Vec<Cell>>,
+    board: Vec<Cell>,
     pub width: usize,
     pub height: usize,
     pub num_mines: usize,
@@ -40,19 +40,20 @@ pub struct Game {
 
 impl Game {
     pub fn get_cell(&self, x: usize, y: usize) -> &Cell {
-        &self.board[y][x]
+        &self.board[y * self.width + x]
+    }
+
+    fn get_cell_mut(&mut self, x: usize, y: usize) -> &mut Cell {
+        &mut self.board[y * self.width + x]
     }
 
     pub fn new(width: usize, height: usize, num_mines: usize) -> Self {
         let board = vec![
-            vec![
-                Cell {
-                    content: CellContent::Number(0),
-                    state: CellState::Covered,
-                };
-                width
-            ];
-            height
+            Cell {
+                content: CellContent::Number(0),
+                state: CellState::Covered,
+            };
+            width * height
         ];
 
         Game {
@@ -85,7 +86,7 @@ impl Game {
 
         // Take the required number of mines from the shuffled list
         for (x, y) in possible_positions.iter().take(self.num_mines) {
-            self.board[*y][*x].content = CellContent::Mine;
+            self.get_cell_mut(*x, *y).content = CellContent::Mine;
         }
 
         self.calculate_numbers();
@@ -94,10 +95,10 @@ impl Game {
     fn calculate_numbers(&mut self) {
         for y in 0..self.height {
             for x in 0..self.width {
-                if self.board[y][x].content == CellContent::Mine {
-                    continue;
+                if self.get_cell(x, y).content != CellContent::Mine {
+                    let n = self.count_adjacent_mines(x, y);
+                    self.get_cell_mut(x, y).content = CellContent::Number(n);
                 }
-                self.board[y][x].content = CellContent::Number(self.count_adjacent_mines(x, y));
             }
         }
     }
@@ -114,7 +115,7 @@ impl Game {
                     && nx < self.width as isize
                     && ny >= 0
                     && ny < self.height as isize
-                    && self.board[ny as usize][nx as usize].content == CellContent::Mine
+                    && self.get_cell(nx as usize, ny as usize).content == CellContent::Mine
                 {
                     count += 1;
                 }
@@ -124,7 +125,7 @@ impl Game {
     }
 
     pub fn reveal(&mut self, x: usize, y: usize) {
-        if x >= self.width || y >= self.height || self.board[y][x].state != CellState::Covered {
+        if x >= self.width || y >= self.height || self.get_cell(x, y).state != CellState::Covered {
             return;
         }
 
@@ -134,11 +135,11 @@ impl Game {
             self.start_time = Some(Instant::now());
         }
 
-        self.board[y][x].state = CellState::Revealed;
-        match self.board[y][x].content {
+        self.get_cell_mut(x, y).state = CellState::Revealed;
+        match self.get_cell(x, y).content {
             CellContent::Mine => {
                 self.state = GameState::Lost;
-                self.board[y][x].content = CellContent::Explosion;
+                self.get_cell_mut(x, y).content = CellContent::Explosion;
                 if let Some(start) = self.start_time {
                     self.final_time = Some(start.elapsed());
                 }
@@ -163,21 +164,17 @@ impl Game {
     }
 
     pub fn flag(&mut self, x: usize, y: usize) {
-        if x < self.width && y < self.height && self.board[y][x].state != CellState::Revealed {
-            self.board[y][x].state = match self.board[y][x].state {
+        if x < self.width && y < self.height && self.get_cell(x, y).state != CellState::Revealed {
+            self.get_cell_mut(x, y).state = match self.get_cell(x, y).state {
                 CellState::Covered => CellState::Flagged,
                 CellState::Flagged => CellState::Covered,
-                _ => self.board[y][x].state,
+                _ => self.get_cell(x, y).state,
             };
         }
     }
 
     pub fn count(&self, cell_state: CellState) -> usize {
-        self.board
-            .iter()
-            .flatten()
-            .filter(|c| c.state == cell_state)
-            .count()
+        self.board.iter().filter(|c| c.state == cell_state).count()
     }
 
     fn check_win_condition(&mut self) {
