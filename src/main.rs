@@ -1,6 +1,7 @@
 use clap::{Parser, ValueEnum};
 use std::io::Result;
 pub mod game;
+pub mod solver;
 pub mod tui;
 
 #[derive(ValueEnum, Clone, Debug)]
