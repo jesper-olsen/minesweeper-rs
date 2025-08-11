@@ -24,7 +24,7 @@ cargo run --release -- -d intermediate
 -   **Safe First Click:** Never hit a mine on the first move.
 -   **In-Game Help:** Press `?` anytime to see the controls.
 -   **Smart Mine Validation:** Automatically prevents impossible configurations.
--   **Optional Solver Assistance:** With `--display-bomb-prob`, the game calculates and shows the estimated probability of a mine being under the current cursor cell.
+-   **Optional Solver Assistance:** With `--display-bomb-prob`, the game calculates [4] and shows the estimated probability of a mine being under the current cursor cell.
 
 
 ## References
