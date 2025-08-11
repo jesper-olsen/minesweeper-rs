@@ -31,7 +31,7 @@ cargo run --release -- -d intermediate
 
 1. [Wikipedia](https://en.wikipedia.org/wiki/Minesweeper_(video_game))
 2. [minesweeper.com](https://minesweepergame.com/)
-3. ["Minesweeper is NP-complete", Mathematical Intelligencer, Vol 22, No 2, 9-15, 2000](https://academic.timwylie.com/17CSCI4341/minesweeper_kay.pdf)
+3. ["Minesweeper is NP-complete", Richard Kaye, Mathematical Intelligencer, Vol 22, No 2, 9-15, 2000](https://academic.timwylie.com/17CSCI4341/minesweeper_kay.pdf)
 4. [A simple Minesweeper algorithm", Mike Sheppard, October 9, 2023](https://minesweepergame.com/math/a-simple-minesweeper-algorithm-2023.pdf)
 
 
