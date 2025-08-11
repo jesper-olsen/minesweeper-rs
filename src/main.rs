@@ -43,6 +43,10 @@ struct Args {
     #[arg(long)]
     /// List available difficulty presets and exit
     list_difficulties: bool,
+
+    #[arg(long, default_value_t = false)]
+    /// display bomb probabilities - in the status bar for cell under the cursor.
+    display_bomb_prob: bool,
 }
 
 fn main() -> Result<()> {
@@ -71,7 +75,7 @@ fn main() -> Result<()> {
     }
 
     let game = game::Game::new(width, height, num_mines);
-    let mut tui = tui::Tui::new(game)?;
+    let mut tui = tui::Tui::new(game, args.display_bomb_prob)?;
 
     tui.game_loop()
 }

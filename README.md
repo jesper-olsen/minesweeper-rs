@@ -24,12 +24,15 @@ cargo run --release -- -d intermediate
 -   **Safe First Click:** Never hit a mine on the first move.
 -   **In-Game Help:** Press `?` anytime to see the controls.
 -   **Smart Mine Validation:** Automatically prevents impossible configurations.
+-   **Optional Solver Assistance:** With `--display-bomb-prob`, the game calculates and shows the estimated probability of a mine being under the current cursor cell.
 
 
 ## References
 
 1. [Wikipedia](https://en.wikipedia.org/wiki/Minesweeper_(video_game))
 2. [minesweeper.com](https://minesweepergame.com/)
+3. ["Minesweeper is NP-complete", Mathematical Intelligencer, Vol 22, No 2, 9-15, 2000](https://academic.timwylie.com/17CSCI4341/minesweeper_kay.pdf)
+4. [A simple Minesweeper algorithm", Mike Sheppard, October 9, 2023](https://minesweepergame.com/math/a-simple-minesweeper-algorithm-2023.pdf)
 
 
 ## Installation
@@ -58,6 +61,7 @@ Options:
       --height <HEIGHT>          Number of rows (ignored if difficulty is set) [default: 9]
       --num-mines <NUM_MINES>    Number of mines (ignored if difficulty is set) [default: 10]
       --list-difficulties        List available difficulty presets and exit
+      --display-bomb-prob        display bomb probabilities - in the status bar for cell under the cursor
   -h, --help                     Print help
   -V, --version                  Print version
 ```

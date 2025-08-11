@@ -32,7 +32,7 @@ pub struct Tui {
 }
 
 impl Tui {
-    pub fn new(game: Game) -> Result<Self> {
+    pub fn new(game: Game, show_bomb_probability: bool) -> Result<Self> {
         let mut stdout = io::stdout();
         terminal::enable_raw_mode()?;
         execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
@@ -43,7 +43,7 @@ impl Tui {
             game,
             cursor_x,
             cursor_y,
-            show_bomb_probability: true,
+            show_bomb_probability,
         })
     }
 
