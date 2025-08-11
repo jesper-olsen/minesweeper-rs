@@ -15,19 +15,20 @@ fn scale_vector(vec: &mut [f64], indices: &[usize], target: f64) {
     }
 }
 
-pub fn solve_iterative_scaling(
+pub fn solve_iterative_scaling<I: AsRef<[usize]>>(
     p: &mut [f64],
     q: &mut [f64],
-    omega: &[(u8, &[usize])],
+    omega: &[(usize, I)],
     iterations: usize,
 ) {
     for _ in 0..iterations {
-        for &(n, indices) in omega {
+        for &(n, ref indices) in omega {
+            let idx_ref = indices.as_ref();
             let target_p = n as f64;
-            let target_q = indices.len() as f64 - target_p;
+            let target_q = idx_ref.len() as f64 - target_p;
 
-            scale_vector(p, indices, target_p);
-            scale_vector(q, indices, target_q);
+            scale_vector(p, idx_ref, target_p);
+            scale_vector(q, idx_ref, target_q);
         }
 
         for i in 0..p.len() {
@@ -57,6 +58,28 @@ mod tests {
             (1, &[1][..]),
             (2, &[0, 1, 2][..]),
             (3, &[0, 1, 2, 3, 4, 5][..]),
+        ];
+
+        solve_iterative_scaling(&mut p, &mut q, &omega, 10);
+
+        let expected = vec![0.5, 1.0, 0.5, 0.333333, 0.333333, 0.333333];
+        assert!(
+            approx_eq_vec(&p, &expected, 1e-3),
+            "p = {:?}, expected = {:?}",
+            p,
+            expected
+        );
+    }
+
+    #[test]
+    fn test_solver_result2() {
+        let mut p = vec![1.0; 6];
+        let mut q = vec![1.0; 6];
+        let omega = vec![
+            (3, vec![0, 1, 2, 3, 4, 5]),
+            (1, vec![1]),
+            (2, vec![0, 1, 2]),
+            (3, vec![0, 1, 2, 3, 4, 5]),
         ];
 
         solve_iterative_scaling(&mut p, &mut q, &omega, 10);

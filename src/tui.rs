@@ -28,6 +28,7 @@ pub struct Tui {
     cursor_x: usize,
     cursor_y: usize,
     game: Game,
+    show_bomb_probability: bool,
 }
 
 impl Tui {
@@ -42,6 +43,7 @@ impl Tui {
             game,
             cursor_x,
             cursor_y,
+            show_bomb_probability: true,
         })
     }
 
@@ -159,14 +161,28 @@ impl Tui {
             0
         };
 
-        const M: &str = "Press 'n' for a new game.";
+        const M: &str = "Press 'n' for a new game.           "; // extra space: ensure line is cleared
         let status = match self.game.state {
             GameState::Playing => {
-                let flags_placed = self.game.count(CellState::Flagged);
-                let covered_cells = self.game.count(CellState::Covered);
-                // note - extra space at end to ensure last status is entirely cleared
+                let flags = self.game.count(CellState::Flagged);
+                let covered = self.game.count(CellState::Covered);
+
+                let prob_display = if self.show_bomb_probability {
+                    let prob = if covered + flags == self.game.width * self.game.height {
+                        self.game.num_mines as f64 / (covered + flags) as f64
+                    } else {
+                        self.game.get_bomb_prob(self.cursor_x, self.cursor_y)
+                    };
+                    format!(
+                        " | Mine @ ({},{}): {prob:4.2}",
+                        self.cursor_x, self.cursor_y
+                    )
+                } else {
+                    String::new()
+                };
+
                 format!(
-                    "Mines: {} | Flags: {flags_placed} | Covered: {covered_cells}              ",
+                    "Mines: {} | Flags: {flags} | Covered: {covered}{prob_display}              ",
                     self.game.num_mines
                 )
             }

@@ -1,3 +1,4 @@
+use crate::solver;
 use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -124,6 +125,26 @@ impl Game {
         count
     }
 
+    // returns adjacent cell indices for unrevealed states
+    fn get_adjacent_unrevealed(&self, x: usize, y: usize) -> Vec<usize> {
+        let mut adjacent = Vec::new();
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                let (nx, ny) = (x as isize + dx, y as isize + dy);
+                if nx >= 0 && nx < self.width as isize && ny >= 0 && ny < self.height as isize {
+                    let idx = (ny * self.width as isize + nx) as usize;
+                    if self.board[idx].state != CellState::Revealed {
+                        adjacent.push(idx);
+                    }
+                }
+            }
+        }
+        adjacent
+    }
+
     pub fn reveal(&mut self, x: usize, y: usize) {
         if x >= self.width || y >= self.height || self.get_cell(x, y).state != CellState::Covered {
             return;
@@ -187,5 +208,42 @@ impl Game {
                 }
             }
         }
+    }
+
+    pub fn get_bomb_prob(&self, cell_x: usize, cell_y: usize) -> f64 {
+        if self.state != GameState::Playing {
+            return 0.0;
+        }
+
+        let covered = self.count(CellState::Covered);
+        let flagged = self.count(CellState::Flagged);
+        let denom = covered + flagged;
+        if denom == 0 {
+            return 0.0;
+        }
+        let prior = self.num_mines as f64 / denom as f64;
+
+        let n_cells = self.width * self.height;
+        let mut p = vec![prior; n_cells];
+        let mut q = vec![1.0 - prior; n_cells];
+        let mut omega: Vec<(usize, Vec<usize>)> = Vec::new();
+        let all_indices: Vec<usize> = (0..n_cells).collect();
+        omega.push((self.num_mines, all_indices));
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let c = self.get_cell(x, y);
+                if let CellContent::Number(n) = c.content {
+                    let unrevealed = self.get_adjacent_unrevealed(x, y);
+                    if !unrevealed.is_empty() {
+                        omega.push((n as usize, unrevealed));
+                    }
+                }
+            }
+        }
+        solver::solve_iterative_scaling(&mut p, &mut q, &omega, 50);
+
+        let idx = cell_y * self.width + cell_x;
+        p[idx]
     }
 }
