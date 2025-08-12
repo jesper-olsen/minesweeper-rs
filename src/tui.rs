@@ -130,7 +130,16 @@ impl Tui {
 
         queue!(self.stdout, ResetColor)?;
         self.stdout.flush()?;
-        let _ = event::read()?;
+
+        // Wait for a real key press (ignore releases and repeats)
+        loop {
+            if let Event::Key(key_event) = event::read()? {
+                if key_event.kind == KeyEventKind::Press {
+                    break;
+                }
+            }
+        }
+
         Ok(())
     }
 
