@@ -1,4 +1,4 @@
-use crate::solver;
+use crate::solver::{self, Constraint};
 use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -214,6 +214,9 @@ impl Game {
         if self.state != GameState::Playing {
             return 0.0;
         }
+        if self.get_cell(cell_x, cell_y).state != CellState::Covered {
+            return 0.0;
+        }
 
         let covered = self.count(CellState::Covered);
         let flagged = self.count(CellState::Flagged);
@@ -226,26 +229,35 @@ impl Game {
         let n_cells = self.width * self.height;
         let mut p = vec![prior; n_cells];
         let mut q = vec![1.0 - prior; n_cells];
-        let mut omega: Vec<(usize, Vec<usize>)> = Vec::new();
-        let all_indices: Vec<usize> = (0..n_cells).collect();
-        omega.push((self.num_mines, all_indices));
+        for i in 0..n_cells {
+            if self.board[i].state == CellState::Revealed {
+                p[i] = 0.0;
+                q[i] = 1.0;
+            }
+        }
+        let unknown_indices: Vec<usize> = (0..n_cells)
+            .filter(|&i| self.board[i].state != CellState::Revealed)
+            .collect();
+        let mut constraints = Vec::new();
+        constraints.push(Constraint::new(unknown_indices, self.num_mines as f64));
 
+        // add number constraints - from unrevealed neighbours
         for y in 0..self.height {
             for x in 0..self.width {
                 if let Cell {
                     content: CellContent::Number(n),
                     state: CellState::Revealed,
-                } = self.get_cell(x, y)
+                } = *self.get_cell(x, y)
                 {
                     let unrevealed = self.get_adjacent_unrevealed(x, y);
                     if !unrevealed.is_empty() {
-                        omega.push((*n as usize, unrevealed));
+                        constraints.push(Constraint::new(unrevealed, n));
                     }
                 }
             }
         }
-        solver::solve_iterative_scaling(&mut p, &mut q, &omega, 50);
 
+        solver::solve_iterative_scaling(&mut p, &mut q, &constraints, 50);
         let idx = cell_y * self.width + cell_x;
         p[idx]
     }

@@ -1,7 +1,7 @@
 use crate::game::{CellContent, CellState, Game, GameState};
 use crossterm::{
     cursor,
-    event::{self, Event, KeyCode, KeyEvent},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     execute, queue,
     style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
     terminal::{self, Clear, ClearType},
@@ -243,7 +243,12 @@ impl Tui {
         loop {
             self.display()?;
 
-            if let Event::Key(KeyEvent { code, .. }) = event::read()? {
+            if let Event::Key(KeyEvent {
+                code,
+                kind: KeyEventKind::Press,
+                ..
+            }) = event::read()?
+            {
                 let is_game_over = self.game.state != GameState::Playing;
                 match code {
                     KeyCode::Char('q') | KeyCode::Esc => break,

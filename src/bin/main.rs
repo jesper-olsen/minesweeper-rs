@@ -1,8 +1,6 @@
 use clap::{Parser, ValueEnum};
+use minesweeper_rs::{game, tui};
 use std::io::Result;
-pub mod game;
-pub mod solver;
-pub mod tui;
 
 #[derive(ValueEnum, Clone, Debug)]
 enum Difficulty {

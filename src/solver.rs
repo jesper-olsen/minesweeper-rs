@@ -1,9 +1,24 @@
-/// Calculates mine probabilities using iterative scaling
-/// Reference:
-/// "A simple Minesweeper algorithm", Mike Sheppard, October 9, 2023
-/// https://minesweepergame.com/math/a-simple-minesweeper-algorithm-2023.pdf
+// Calculates mine probabilities using iterative scaling
+// Reference:
+// "A simple Minesweeper algorithm", Mike Sheppard, October 9, 2023
+// https://minesweepergame.com/math/a-simple-minesweeper-algorithm-2023.pdf
 
 const EPS: f64 = 1e-6;
+
+#[derive(Debug)]
+pub struct Constraint {
+    pub cells: Vec<usize>, // cell indexes
+    pub count: f64,        // can be integer-like or fractional
+}
+
+impl Constraint {
+    pub fn new(cells: Vec<usize>, count: impl Into<f64>) -> Self {
+        Self {
+            cells,
+            count: count.into(),
+        }
+    }
+}
 
 fn scale_vector(vec: &mut [f64], indices: &[usize], target: f64) {
     let sum: f64 = indices.iter().map(|&i| vec[i]).sum();
@@ -15,22 +30,23 @@ fn scale_vector(vec: &mut [f64], indices: &[usize], target: f64) {
     }
 }
 
-pub fn solve_iterative_scaling<I: AsRef<[usize]>>(
+pub fn solve_iterative_scaling(
     p: &mut [f64],
     q: &mut [f64],
-    omega: &[(usize, I)],
+    constraints: &[Constraint],
     iterations: usize,
 ) {
     for _ in 0..iterations {
-        for &(n, ref indices) in omega {
-            let idx_ref = indices.as_ref();
-            let target_p = n as f64;
-            let target_q = idx_ref.len() as f64 - target_p;
-
-            scale_vector(p, idx_ref, target_p);
-            scale_vector(q, idx_ref, target_q);
+        // Update p's
+        for constraint in constraints {
+            scale_vector(p, &constraint.cells, constraint.count);
         }
-
+        // Update q's
+        for constraint in constraints {
+            let target_q = constraint.cells.len() as f64 - constraint.count;
+            scale_vector(q, &constraint.cells, target_q);
+        }
+        // Normalize
         for i in 0..p.len() {
             let total = p[i] + q[i];
             if total > EPS {
@@ -50,17 +66,17 @@ mod tests {
     }
 
     #[test]
-    fn test_solver_result() {
+    fn test_int_example() {
         let mut p = vec![1.0; 6];
         let mut q = vec![1.0; 6];
-        let omega = vec![
-            (3, &[0, 1, 2, 3, 4, 5][..]),
-            (1, &[1][..]),
-            (2, &[0, 1, 2][..]),
-            (3, &[0, 1, 2, 3, 4, 5][..]),
+        let constraints = vec![
+            Constraint::new(vec![0, 1, 2, 3, 4, 5], 3),
+            Constraint::new(vec![1], 1),
+            Constraint::new(vec![0, 1, 2], 2),
+            Constraint::new(vec![0, 1, 2, 3, 4, 5], 3),
         ];
 
-        solve_iterative_scaling(&mut p, &mut q, &omega, 10);
+        solve_iterative_scaling(&mut p, &mut q, &constraints, 10);
 
         let expected = vec![0.5, 1.0, 0.5, 0.333333, 0.333333, 0.333333];
         assert!(
@@ -72,24 +88,33 @@ mod tests {
     }
 
     #[test]
-    fn test_solver_result2() {
-        let mut p = vec![1.0; 6];
-        let mut q = vec![1.0; 6];
-        let omega = vec![
-            (3, vec![0, 1, 2, 3, 4, 5]),
-            (1, vec![1]),
-            (2, vec![0, 1, 2]),
-            (3, vec![0, 1, 2, 3, 4, 5]),
+    fn test_float_example() {
+        // From Mike Sheppard's toy example:
+        // p1+p2 = 0.79, p1+p3 = 0.24
+        let mut p = vec![1.0; 3];
+        let mut q = vec![1.0; 3];
+
+        let constraints = vec![
+            Constraint::new(vec![0, 1], 0.79),
+            Constraint::new(vec![0, 2], 0.24),
         ];
 
-        solve_iterative_scaling(&mut p, &mut q, &omega, 10);
+        solve_iterative_scaling(&mut p, &mut q, &constraints, 50);
 
-        let expected = vec![0.5, 1.0, 0.5, 0.333333, 0.333333, 0.333333];
+        let expected_p = vec![0.14985, 0.64015, 0.0901505];
+        let expected_q = vec![0.85015, 0.35985, 0.90985];
+
         assert!(
-            approx_eq_vec(&p, &expected, 1e-3),
+            approx_eq_vec(&p, &expected_p, 1e-5),
             "p = {:?}, expected = {:?}",
             p,
-            expected
+            expected_p
+        );
+        assert!(
+            approx_eq_vec(&q, &expected_q, 1e-5),
+            "q = {:?}, expected = {:?}",
+            q,
+            expected_q
         );
     }
 }

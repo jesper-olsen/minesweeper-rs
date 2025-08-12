@@ -5,12 +5,12 @@ A classic game of Minesweeper [1,2] for the terminal, written in Rust and built 
 ## Quick Start
 Play beginner difficulty (default)
 ```bash
-cargo run --release
+cargo run --release --bin main
 ```
 
 Or try intermediate
 ```bash
-cargo run --release -- -d intermediate
+cargo run --release --bin main -- -d intermediate
 ```
 
 | ![Game UI](Assets/screenshot.png) |
@@ -45,7 +45,7 @@ cargo run --release -- -d intermediate
     ```
 3.  **Build the release binary:**
     ```bash
-    cargo build --release
+    cargo build --release --bin main
     ```
     The executable will be located at `target/release/minesweeper-rs`.
 
@@ -67,7 +67,7 @@ Options:
 ```
 
 ```bash
-% cargo run --release -- --list-difficulties
+% cargo run --release --bin main -- --list-difficulties
 
 Available difficulties:
   beginner     - 9x9, 10 mines (8%)
