@@ -232,11 +232,14 @@ impl Game {
 
         for y in 0..self.height {
             for x in 0..self.width {
-                let c = self.get_cell(x, y);
-                if let CellContent::Number(n) = c.content {
+                if let Cell {
+                    content: CellContent::Number(n),
+                    state: CellState::Revealed,
+                } = self.get_cell(x, y)
+                {
                     let unrevealed = self.get_adjacent_unrevealed(x, y);
                     if !unrevealed.is_empty() {
-                        omega.push((n as usize, unrevealed));
+                        omega.push((*n as usize, unrevealed));
                     }
                 }
             }
