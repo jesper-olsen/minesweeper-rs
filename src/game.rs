@@ -214,7 +214,7 @@ impl Game {
         if self.state != GameState::Playing {
             return 0.0;
         }
-        if self.get_cell(cell_x, cell_y).state != CellState::Covered {
+        if self.get_cell(cell_x, cell_y).state == CellState::Revealed {
             return 0.0;
         }
 
