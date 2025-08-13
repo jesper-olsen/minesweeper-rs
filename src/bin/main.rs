@@ -1,23 +1,8 @@
-use clap::{Parser, ValueEnum};
-use minesweeper_rs::{game, tui};
+use clap::Parser;
+use minesweeper_rs::{
+    Difficulty, {game, tui},
+};
 use std::io::Result;
-
-#[derive(ValueEnum, Clone, Debug)]
-enum Difficulty {
-    Beginner,
-    Intermediate,
-    Expert,
-}
-
-impl Difficulty {
-    fn dimensions(&self) -> (usize, usize, usize) {
-        match self {
-            Difficulty::Beginner => (9, 9, 10),
-            Difficulty::Intermediate => (16, 16, 40),
-            Difficulty::Expert => (30, 16, 99),
-        }
-    }
-}
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

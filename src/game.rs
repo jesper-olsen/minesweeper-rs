@@ -211,22 +211,28 @@ impl Game {
     }
 
     pub fn get_bomb_prob(&self, cell_x: usize, cell_y: usize) -> f64 {
-        if self.state != GameState::Playing {
-            return 0.0;
-        }
         if self.get_cell(cell_x, cell_y).state == CellState::Revealed {
             return 0.0;
+        }
+        let p = self.calculate_all_bomb_probs();
+        let idx = cell_y * self.width + cell_x;
+        p[idx]
+    }
+
+    pub fn calculate_all_bomb_probs(&self) -> Vec<f64> {
+        let n_cells = self.width * self.height;
+        if self.state != GameState::Playing {
+            return vec![0.0; n_cells];
         }
 
         let covered = self.count(CellState::Covered);
         let flagged = self.count(CellState::Flagged);
         let denom = covered + flagged;
         if denom == 0 {
-            return 0.0;
+            return vec![0.0; n_cells];
         }
         let prior = self.num_mines as f64 / denom as f64;
 
-        let n_cells = self.width * self.height;
         let mut p = vec![prior; n_cells];
         let mut q = vec![1.0 - prior; n_cells];
         for i in 0..n_cells {
@@ -258,7 +264,6 @@ impl Game {
         }
 
         solver::solve_iterative_scaling(&mut p, &mut q, &constraints, 50);
-        let idx = cell_y * self.width + cell_x;
-        p[idx]
+        p
     }
 }
