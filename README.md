@@ -56,14 +56,24 @@ cargo run --release --bin main -- -d intermediate
 Usage: minesweeper-rs [OPTIONS]
 
 Options:
-  -d, --difficulty <DIFFICULTY>  Use a classic difficulty preset (overrides width/height/mines) [possible values: beginner, intermediate, expert]
-      --width <WIDTH>            Number of columns (ignored if difficulty is set) [default: 9]
-      --height <HEIGHT>          Number of rows (ignored if difficulty is set) [default: 9]
-      --num-mines <NUM_MINES>    Number of mines (ignored if difficulty is set) [default: 10]
-      --list-difficulties        List available difficulty presets and exit
-      --display-bomb-prob        display bomb probabilities - in the status bar for cell under the cursor
-  -h, --help                     Print help
-  -V, --version                  Print version
+  -d, --difficulty <DIFFICULTY>
+          Use a classic difficulty preset (overrides width/height/mines) [possible values: beginner, intermediate, expert]
+  -f, --first-click-policy <FIRST_CLICK_POLICY>
+          [default: guaranteed-zero] [possible values: guaranteed-zero, guaranteed-safe, unprotected]
+      --width <WIDTH>
+          Number of columns (ignored if difficulty is set) [default: 9]
+      --height <HEIGHT>
+          Number of rows (ignored if difficulty is set) [default: 9]
+      --num-mines <NUM_MINES>
+          Number of mines (ignored if difficulty is set) [default: 10]
+      --list-difficulties
+          List available difficulty presets and exit
+      --display-bomb-prob
+          display bomb probabilities - in the status bar for cell under the cursor
+  -h, --help
+          Print help
+  -V, --version
+          Print version
 ```
 
 ```bash

@@ -1,19 +1,25 @@
 use minesweeper_rs::{
-    Difficulty,
+    Difficulty, FirstClickPolicy,
     game::{CellState, Game, GameState},
 };
 use rand::Rng;
 use rand::prelude::IndexedRandom;
 use rayon::prelude::*;
 
-fn benchmark_solver(num_games: usize, difficulty: Difficulty) -> usize {
+fn benchmark_solver(
+    num_games: usize,
+    difficulty: Difficulty,
+    first_click_policy: FirstClickPolicy,
+) -> usize {
     let (width, height, num_mines) = difficulty.dimensions();
     (0..num_games)
         .into_par_iter()
         .map(|_| {
             let mut rng = rand::rng();
-            let mut game = Game::new(width, height, num_mines);
+            let mut game = Game::new(width, height, num_mines, first_click_policy);
 
+            // let first_x = 0;
+            // let first_y = 0;
             // First click is random
             let first_x = rng.random_range(0..width);
             let first_y = rng.random_range(0..height);
@@ -62,12 +68,13 @@ fn benchmark_solver(num_games: usize, difficulty: Difficulty) -> usize {
 
 fn main() {
     let num_games = 1000;
+    let first_click_policy = FirstClickPolicy::GuaranteedZero;
     for difficulty in [
         Difficulty::Beginner,
         Difficulty::Intermediate,
         Difficulty::Expert,
     ] {
-        let wins = benchmark_solver(num_games, difficulty);
+        let wins = benchmark_solver(num_games, difficulty, first_click_policy);
         println!(
             "Difficulty {difficulty:?}: Solver won {}/{} games ({:.2}%)",
             wins,

@@ -1,6 +1,6 @@
 use clap::Parser;
 use minesweeper_rs::{
-    Difficulty, {game, tui},
+    Difficulty, FirstClickPolicy, {game, tui},
 };
 use std::io::Result;
 
@@ -10,6 +10,10 @@ struct Args {
     #[arg(short, long, value_enum)]
     /// Use a classic difficulty preset (overrides width/height/mines)
     difficulty: Option<Difficulty>,
+
+    #[arg(short, long, value_enum, default_value_t = FirstClickPolicy::GuaranteedZero)]
+    ///
+    first_click_policy: FirstClickPolicy,
 
     #[arg(long, default_value_t = 9)]
     /// Number of columns (ignored if difficulty is set)
@@ -57,7 +61,7 @@ fn main() -> Result<()> {
         std::process::exit(1);
     }
 
-    let game = game::Game::new(width, height, num_mines);
+    let game = game::Game::new(width, height, num_mines, args.first_click_policy);
     let mut tui = tui::Tui::new(game, args.display_bomb_prob)?;
 
     tui.game_loop()

@@ -20,3 +20,10 @@ impl Difficulty {
         }
     }
 }
+
+#[derive(ValueEnum, Copy, Clone, Debug)]
+pub enum FirstClickPolicy {
+    GuaranteedZero, // 0-cell (3x3 opening)
+    GuaranteedSafe, // mine free
+    Unprotected,    // can hit a mine
+}

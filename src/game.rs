@@ -1,4 +1,7 @@
-use crate::solver::{self, Constraint};
+use crate::{
+    FirstClickPolicy,
+    solver::{self, Constraint},
+};
 use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -35,6 +38,7 @@ pub struct Game {
     pub num_mines: usize,
     pub state: GameState,
     first_click: bool,
+    pub first_click_policy: FirstClickPolicy,
     pub start_time: Option<Instant>,
     pub final_time: Option<Duration>,
 }
@@ -48,7 +52,12 @@ impl Game {
         &mut self.board[y * self.width + x]
     }
 
-    pub fn new(width: usize, height: usize, num_mines: usize) -> Self {
+    pub fn new(
+        width: usize,
+        height: usize,
+        num_mines: usize,
+        first_click_policy: FirstClickPolicy,
+    ) -> Self {
         let board = vec![
             Cell {
                 content: CellContent::Number(0),
@@ -66,19 +75,26 @@ impl Game {
             first_click: true,
             start_time: None,
             final_time: None,
+            first_click_policy,
         }
     }
 
-    fn place_mines(&mut self, avoid_x: usize, avoid_y: usize) {
+    fn place_mines(&mut self, first_x: usize, first_y: usize) {
         let mut rng = rand::rng();
         let mut possible_positions: Vec<(usize, usize)> = (0..self.height)
             .flat_map(|y| (0..self.width).map(move |x| (x, y)))
             .collect();
 
+        let avoid_width = match self.first_click_policy {
+            FirstClickPolicy::GuaranteedZero => 1,
+            FirstClickPolicy::GuaranteedSafe => 0,
+            FirstClickPolicy::Unprotected => -1,
+        };
+
         // Remove the 3x3 area around the first click
         possible_positions.retain(|(x, y)| {
-            !(((*x as isize - avoid_x as isize).abs() <= 1)
-                && ((*y as isize - avoid_y as isize).abs() <= 1))
+            !(((*x as isize - first_x as isize).abs() <= avoid_width)
+                && ((*y as isize - first_y as isize).abs() <= avoid_width))
         });
 
         // Shuffle the valid positions

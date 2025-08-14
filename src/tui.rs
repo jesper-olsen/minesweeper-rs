@@ -263,8 +263,12 @@ impl Tui {
                     KeyCode::Char('q') | KeyCode::Esc => break,
                     KeyCode::Char('?') => self.display_help()?,
                     KeyCode::Char('n') if is_game_over => {
-                        self.game =
-                            Game::new(self.game.width, self.game.height, self.game.num_mines);
+                        self.game = Game::new(
+                            self.game.width,
+                            self.game.height,
+                            self.game.num_mines,
+                            self.game.first_click_policy,
+                        );
                     }
                     _ if is_game_over => {} // Ignore other input if game over
                     KeyCode::Up | KeyCode::Char('k') => self.move_cursor(0, -1),
