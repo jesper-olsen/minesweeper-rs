@@ -72,12 +72,13 @@ The following heatmaps illustrate the win rate for each board square:
     <p>Figure 3: Guaranteed Safe (left) and Guaranteed Zero (right) - win rate heatmaps for expert level.</p>
 </div>
 
+
 **Summary of Findings**
 
 Unprotected and Guaranteed Safe are very similar policies - the corners are the best
 openings, followed by the edges while the interior is uniformly the same.
 
-This can be understood by considering the probability of revealing a zero cell, which is highly desirable as it leads to a cascade. With a uniform bomb distribution, corner cells (with 3 neighbors) have a higher probability of being a zero cell than interior cells (with 8 neighbors)."
+This can be understood by considering the probability of revealing a zero cell, which is highly desirable as it leads to a cascade. With a uniform bomb distribution, corner cells (with 3 neighbors) have a higher probability of being a zero cell than interior cells (with 8 neighbors).
 
 For the Guaranteed Zero rule, the dynamics change. The policy guarantees a zero cell, meaning that clicking an interior cell reveals a block of at least 9 cells, while a corner reveals only a block of 4.
 

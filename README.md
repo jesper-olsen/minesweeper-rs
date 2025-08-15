@@ -19,12 +19,13 @@ cargo run --release --bin main -- -d intermediate
 
 ## Features
 
--   **Configurable Board:** Set the width, height, and number of mines.
--   **Vim Keybindings:** Navigate with `h`, `j`, `k`, `l` in addition to arrow keys.
--   **Safe First Click:** Never hit a mine on the first move.
--   **In-Game Help:** Press `?` anytime to see the controls.
--   **Smart Mine Validation:** Automatically prevents impossible configurations.
--   **Optional Solver Assistance:** With `--display-bomb-prob`, the game calculates [4] and shows the estimated probability of a mine being under the current cursor cell.
+* **Configurable Board:** Set the width, height, and number of mines.
+* **Vim Keybindings:** Navigate with `h`, `j`, `k`, `l` in addition to arrow keys.
+* **Flexible First Click:** The game supports a range of first-click policies, from the forgiving Guaranteed Zero to the classic Unprotected policy.
+* **In-Game Help:** Press `?` anytime to see the controls.
+* **Smart Board Generation:** Automatically validates and prevents impossible board configurations.
+* **Optional Solver Assistance:** With `--display-bomb-prob`, the game calculates and shows the estimated probability of a mine being at the cursor's location.
+
 
 
 ## References
@@ -85,6 +86,14 @@ Available difficulties:
   expert       - 30x16, 99 mines (21%)
 ```
 
+The solver can be run independently of the interactive user facing app.
+Edit the source to configure the experiment you want to explore.
+
+```bash
+% cargo run --release --bin main_solver 
+```
+
+See the [Solver Analysis](SolverAnalysis.md) page for statistics on the solver accuracy.
 
 ## License
 
