@@ -29,6 +29,7 @@ run 10k times for each square:
 | GuaranteedSafe | Intermediate | 75.74%        | 67.74%         |
 | GuaranteedZero | Intermediate | 91.37%        | 84.97%         |
 | GuaranteedSafe | Expert       | 35.32%        | 30.40%         |
+| GuaranteedZero | Expert       | 51.75%        | 43.06%         |
 
 The following heatmaps illustrate the win rate for each board square:
 
