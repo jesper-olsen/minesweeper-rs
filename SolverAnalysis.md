@@ -43,7 +43,7 @@ The following heatmaps illustrate the win rate for each board square:
         </tr>
     </table>
     <br>
-    <p>Figure 1: Win Rate Heatmaps for Beginner Level, showing Unprotected (left), Guaranteed Safe (center), and Guaranteed Zero (right).</p>
+    <p>Figure 1: Unprotected (left), Guaranteed Safe (center), and Guaranteed Zero (right) - win rate heatmaps for beginner level.</p>
 </div>
 
 ### Intermediate Level 
@@ -56,7 +56,7 @@ The following heatmaps illustrate the win rate for each board square:
         </tr>
     </table>
     <br>
-    <p>Figure 2: Win Rate Heatmaps for Intermediate Level, showing Guaranteed Safe (left) and Guaranteed Zero (right).</p>
+    <p>Figure 2: Guaranteed Safe (left) and Guaranteed Zero (right) - win rate heatmaps for intermediate level.</p>
 </div>
 
 ### Expert Level
@@ -69,7 +69,7 @@ The following heatmaps illustrate the win rate for each board square:
         </tr>
     </table>
     <br>
-    <p>Figure 3: Win Rate Heatmaps for Expert Level, showing Guaranteed Safe (left) and Guaranteed Zero (right).</p>
+    <p>Figure 3: Guaranteed Safe (left) and Guaranteed Zero (right) - win rate heatmaps for expert level.</p>
 </div>
 
 **Summary of Findings**
