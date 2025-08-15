@@ -34,30 +34,20 @@ The following heatmaps illustrate the win rate for each board square:
 
 ### Beginner Level
 
-<figure>
-  <img src="SolverDat/heatmap_beginner_unprotected.png" alt="Beginner - Unprotected">
-  <figcaption align="center">Figure 1: Win Rate Heatmap for Beginner - Unprotected Policy</figcaption>
-</figure>
-<br>
-<br>
-<br>
-
-<figure>
-  <img src="SolverDat/heatmap_beginner_guaranteed_safe.png" alt="Beginner - Guaranteed Safe">
-  <figcaption align="center">Figure 2: Win Rate Heatmap for Beginner - Guaranteed Safe Policy</figcaption>
-</figure>
-<br>
-<br>
-<br>
-
-
-<figure>
-  <img src="SolverDat/heatmap_beginner_guaranteed_zero.png" alt="Beginner - Guaranteed Zero">
-  <figcaption align="center">Figure 3: Win Rate Heatmap for Beginner - Guaranteed Zero Policy</figcaption>
-</figure>
-<br>
-<br>
-<br>
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <figure>
+        <img src="SolverDat/heatmap_beginner_unprotected.png" alt="Beginner - Unprotected">
+        <figcaption align="center">Figure 1: Unprotected</figcaption>
+    </figure>
+    <figure>
+        <img src="SolverDat/heatmap_beginner_guaranteed_safe.png" alt="Beginner - Guaranteed Safe">
+        <figcaption align="center">Figure 2: Guaranteed Safe</figcaption>
+    </figure>
+    <figure>
+        <img src="SolverDat/heatmap_beginner_guaranteed_zero.png" alt="Beginner - Guaranteed Zero">
+        <figcaption align="center">Figure 3: Guaranteed Zero</figcaption>
+    </figure>
+</div>
 
 ### Intermediate Level 
 
