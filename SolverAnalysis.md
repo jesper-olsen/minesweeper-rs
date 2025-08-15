@@ -48,40 +48,29 @@ The following heatmaps illustrate the win rate for each board square:
 
 ### Intermediate Level 
 
-<figure>
-  <img src="SolverDat/heatmap_intermediate_guaranteed_safe.png" alt="Intermediate - Guaranteed Safe">
-  <figcaption align="center">Figure 4: Win Rate Heatmap for Intermediate - Guaranteed Safe Policy</figcaption>
-</figure>
-<br>
-<br>
-<br>
-
-<figure>
-  <img src="SolverDat/heatmap_intermediate_guaranteed_zero.png" alt="Intermediate - Guaranteed Safe">
-  <figcaption align="center">Figure 5: Win Rate Heatmap for Intermediate - Guaranteed Zero Policy</figcaption>
-</figure>
-<br>
-<br>
-<br>
-
+<div align="center">
+    <table>
+        <tr>
+            <td><img src="SolverDat/heatmap_intermediate_guaranteed_safe.png" alt="Intermediate - Guaranteed Safe"></td>
+            <td><img src="SolverDat/heatmap_intermediate_guaranteed_zero.png" alt="Intermediate - Guaranteed Zero"></td>
+        </tr>
+    </table>
+    <br>
+    <p>Figure 2: Win Rate Heatmaps for Intermediate Level, showing Guaranteed Safe (left) and Guaranteed Zero (right).</p>
+</div>
 
 ### Expert Level
 
-<figure>
-  <img src="SolverDat/heatmap_expert_guaranteed_safe.png" alt="Expert - Guaranteed Safe">
-  <figcaption align="center">Figure 6: Win Rate Heatmap for Expert - Guaranteed Safe Policy</figcaption>
-</figure>
-<br>
-<br>
-<br>
-
-<figure>
-  <img src="SolverDat/heatmap_expert_guaranteed_zero.png" alt="Expert - Guaranteed Safe">
-  <figcaption align="center">Figure 7: Win Rate Heatmap for Expert - Guaranteed Zero Policy</figcaption>
-</figure>
-<br>
-<br>
-<br>
+<div align="center">
+    <table>
+        <tr>
+            <td><img src="SolverDat/heatmap_expert_guaranteed_safe.png" alt="Expert - Guaranteed Safe"></td>
+            <td><img src="SolverDat/heatmap_expert_guaranteed_zero.png" alt="Expert - Guaranteed Zero"></td>
+        </tr>
+    </table>
+    <br>
+    <p>Figure 3: Win Rate Heatmaps for Expert Level, showing Guaranteed Safe (left) and Guaranteed Zero (right).</p>
+</div>
 
 **Summary of Findings**
 
