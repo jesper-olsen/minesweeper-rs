@@ -10,6 +10,7 @@ fn benchmark_solver(
     num_games: usize,
     difficulty: Difficulty,
     first_click_policy: FirstClickPolicy,
+    first_click: Option<(usize, usize)>,
 ) -> usize {
     let (width, height, num_mines) = difficulty.dimensions();
     (0..num_games)
@@ -18,11 +19,9 @@ fn benchmark_solver(
             let mut rng = rand::rng();
             let mut game = Game::new(width, height, num_mines, first_click_policy);
 
-            // let first_x = 0;
-            // let first_y = 0;
-            // First click is random
-            let first_x = rng.random_range(0..width);
-            let first_y = rng.random_range(0..height);
+            // Use provided coordinate or generate random one
+            let (first_x, first_y) = first_click
+                .unwrap_or_else(|| (rng.random_range(0..width), rng.random_range(0..height)));
             game.reveal(first_x, first_y);
 
             while game.state == GameState::Playing {
@@ -66,22 +65,48 @@ fn benchmark_solver(
         .sum()
 }
 
-fn main() {
-    let num_games = 1000;
-    let first_click_policy = FirstClickPolicy::GuaranteedZero;
-    for difficulty in [
-        Difficulty::Beginner,
-        Difficulty::Intermediate,
-        Difficulty::Expert,
-    ] {
-        let wins = benchmark_solver(num_games, difficulty, first_click_policy);
-        println!(
-            "Difficulty {difficulty:?}: Solver won {}/{} games ({:.2}%)",
-            wins,
-            num_games,
-            wins as f64 / num_games as f64 * 100.0
-        );
-    }
+// fn bench_random() {
+//     let num_games = 1000;
+//     let first_click_policy = FirstClickPolicy::Unprotected;
+//     //let first_click_policy = FirstClickPolicy::GuaranteedZero;
+//     for difficulty in [
+//         Difficulty::Beginner,
+//         Difficulty::Intermediate,
+//         Difficulty::Expert,
+//     ] {
+//         let wins = benchmark_solver(num_games, difficulty, first_click_policy, None);
+//         println!(
+//             "Difficulty {difficulty:?}: Solver won {}/{} games ({:.2}%)",
+//             wins,
+//             num_games,
+//             wins as f64 / num_games as f64 * 100.0
+//         );
+//     }
+// }
 
-    //let (width, height, num_mines) = difficulty.dimensions();
+fn heatmap() {
+    let num_games = 10000;
+    //let first_click_policy = FirstClickPolicy::Unprotected;
+    let first_click_policy = FirstClickPolicy::GuaranteedZero;
+    //let first_click_policy = FirstClickPolicy::GuaranteedSafe;
+    //let difficulty = Difficulty::Intermediate;
+    let difficulty = Difficulty::Expert;
+    //let difficulty = Difficulty::Beginner;
+    let (width, height, _) = difficulty.dimensions();
+
+    // Output for plotting
+    for y in (0..height).rev() {
+        for x in 0..width {
+            let first_click = Some((x, y));
+            let wins = benchmark_solver(num_games, difficulty, first_click_policy, first_click);
+            let win_rate = wins as f64 / num_games as f64 * 100.0;
+            // space between values, no trailing space at end of line
+            print!("{win_rate:.2} ");
+        }
+        println!();
+    }
+}
+
+fn main() {
+    heatmap();
 }
