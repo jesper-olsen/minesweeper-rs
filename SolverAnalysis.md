@@ -57,7 +57,7 @@ The following heatmaps illustrate the win rate for each board square:
         </tr>
     </table>
     <br>
-    <p>Figure 2: Guaranteed Safe (left) and Guaranteed Zero (right) - win rate heatmaps for intermediate level.</p>
+    <p>Figure 2: Guaranteed Safe (<a href="SolverDat/heatmap_intermediate_guaranteed_safe.txt">center</a>), and Guaranteed Zero (<a href="SolverDat/heatmap_intermediate_guaranteed_zero.txt">right</a>) - win rate heatmaps for intermediate level.</p>
 </div>
 
 ### Expert Level
@@ -70,7 +70,7 @@ The following heatmaps illustrate the win rate for each board square:
         </tr>
     </table>
     <br>
-    <p>Figure 3: Guaranteed Safe (left) and Guaranteed Zero (right) - win rate heatmaps for expert level.</p>
+    <p>Figure 3: Guaranteed Safe (<a href="SolverDat/heatmap_expert_guaranteed_safe.txt">center</a>), and Guaranteed Zero (<a href="SolverDat/heatmap_expert_guaranteed_zero.txt">right</a>) - win rate heatmaps for expert level.</p>
 </div>
 
 
