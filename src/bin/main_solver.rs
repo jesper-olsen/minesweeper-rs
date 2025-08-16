@@ -74,7 +74,8 @@ fn benchmark_solver(
 //         Difficulty::Intermediate,
 //         Difficulty::Expert,
 //     ] {
-//         let wins = benchmark_solver(num_games, difficulty, first_click_policy, None);
+//         let first_click = None;
+//         let wins = benchmark_solver(num_games, difficulty, first_click_policy, first);
 //         println!(
 //             "Difficulty {difficulty:?}: Solver won {}/{} games ({:.2}%)",
 //             wins,
@@ -86,12 +87,12 @@ fn benchmark_solver(
 
 fn heatmap() {
     let num_games = 10000;
-    //let first_click_policy = FirstClickPolicy::Unprotected;
-    let first_click_policy = FirstClickPolicy::GuaranteedZero;
+    let first_click_policy = FirstClickPolicy::Unprotected;
+    //let first_click_policy = FirstClickPolicy::GuaranteedZero;
     //let first_click_policy = FirstClickPolicy::GuaranteedSafe;
     //let difficulty = Difficulty::Intermediate;
-    let difficulty = Difficulty::Expert;
-    //let difficulty = Difficulty::Beginner;
+    //let difficulty = Difficulty::Expert;
+    let difficulty = Difficulty::Beginner;
     let (width, height, _) = difficulty.dimensions();
 
     // Output for plotting
