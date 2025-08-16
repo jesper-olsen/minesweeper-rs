@@ -44,7 +44,7 @@ The following heatmaps illustrate the win rate for each board square:
         </tr>
     </table>
     <br>
-    <p>Figure 1: Unprotected ([left](SolverDat/heatmap_beginner_unprotected.dat)), Guaranteed Safe ([center](SolverDat/heatmap_beginner_guaranteed_safe.dat)), and Guaranteed Zero ([right](SolverDat/heatmap_beginner_guaranteed_zero)) - win rate heatmaps for beginner level.</p>
+    <p>Figure 1: Unprotected ([left](SolverDat/heatmap_beginner_unprotected.txt)), Guaranteed Safe ([center](SolverDat/heatmap_beginner_guaranteed_safe.txt)), and Guaranteed Zero ([right](SolverDat/heatmap_beginner_guaranteed_zero.txt)) - win rate heatmaps for beginner level.</p>
 </div>
 
 ### Intermediate Level 
