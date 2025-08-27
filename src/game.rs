@@ -161,7 +161,7 @@ impl Game {
         &self.board[y * self.width + x]
     }
 
-    fn get_cell_mut(&mut self, x: usize, y: usize) -> &mut Cell {
+    pub fn get_cell_mut(&mut self, x: usize, y: usize) -> &mut Cell {
         &mut self.board[y * self.width + x]
     }
 
