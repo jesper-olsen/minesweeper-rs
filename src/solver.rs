@@ -3,22 +3,9 @@
 // "A simple Minesweeper algorithm", Mike Sheppard, October 9, 2023
 // https://minesweepergame.com/math/a-simple-minesweeper-algorithm-2023.pdf
 
+use crate::Constraint;
+
 const EPS: f64 = 1e-6;
-
-#[derive(Debug)]
-pub struct Constraint {
-    pub cells: Vec<usize>, // cell indexes
-    pub count: f64,        // can be integer-like or fractional
-}
-
-impl Constraint {
-    pub fn new(cells: Vec<usize>, count: impl Into<f64>) -> Self {
-        Self {
-            cells,
-            count: count.into(),
-        }
-    }
-}
 
 fn scale_vector(vec: &mut [f64], indices: &[usize], target: f64) {
     let sum: f64 = indices.iter().map(|&i| vec[i]).sum();

@@ -27,3 +27,18 @@ pub enum FirstClickPolicy {
     GuaranteedSafe, // mine free
     Unprotected,    // can hit a mine
 }
+
+#[derive(Debug)]
+pub struct Constraint {
+    pub cells: Vec<usize>, // cell indexes
+    pub count: f64,        // can be integer-like or fractional
+}
+
+impl Constraint {
+    pub fn new(cells: Vec<usize>, count: impl Into<f64>) -> Self {
+        Self {
+            cells,
+            count: count.into(),
+        }
+    }
+}

@@ -1,9 +1,6 @@
 use std::fmt;
 
-use crate::{
-    FirstClickPolicy,
-    solver::{self, Constraint},
-};
+use crate::{Constraint, FirstClickPolicy, solver};
 use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -348,6 +345,32 @@ impl Game {
         p[idx]
     }
 
+    fn get_constraints(&self) -> Vec<Constraint> {
+        let n_cells = self.width * self.height;
+        let unknown_indices: Vec<usize> = (0..n_cells)
+            .filter(|&i| self.board[i].state != CellState::Revealed)
+            .collect();
+        let mut constraints = Vec::new();
+        constraints.push(Constraint::new(unknown_indices, self.num_mines as f64));
+
+        // add number constraints - from unrevealed neighbours
+        for y in 0..self.height {
+            for x in 0..self.width {
+                if let Cell {
+                    content: CellContent::Number(n),
+                    state: CellState::Revealed,
+                } = *self.get_cell(x, y)
+                {
+                    let unrevealed = self.get_adjacent_unrevealed(x, y);
+                    if !unrevealed.is_empty() {
+                        constraints.push(Constraint::new(unrevealed, n));
+                    }
+                }
+            }
+        }
+        constraints
+    }
+
     pub fn calculate_all_bomb_probs(&self) -> Vec<f64> {
         let n_cells = self.width * self.height;
         if self.state != GameState::Playing {
@@ -370,27 +393,8 @@ impl Game {
                 q[i] = 1.0;
             }
         }
-        let unknown_indices: Vec<usize> = (0..n_cells)
-            .filter(|&i| self.board[i].state != CellState::Revealed)
-            .collect();
-        let mut constraints = Vec::new();
-        constraints.push(Constraint::new(unknown_indices, self.num_mines as f64));
 
-        // add number constraints - from unrevealed neighbours
-        for y in 0..self.height {
-            for x in 0..self.width {
-                if let Cell {
-                    content: CellContent::Number(n),
-                    state: CellState::Revealed,
-                } = *self.get_cell(x, y)
-                {
-                    let unrevealed = self.get_adjacent_unrevealed(x, y);
-                    if !unrevealed.is_empty() {
-                        constraints.push(Constraint::new(unrevealed, n));
-                    }
-                }
-            }
-        }
+        let constraints = self.get_constraints();
 
         solver::solve_iterative_scaling(&mut p, &mut q, &constraints, 100);
         p
