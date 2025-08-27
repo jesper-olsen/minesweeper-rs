@@ -345,7 +345,7 @@ impl Game {
         p[idx]
     }
 
-    fn get_constraints(&self) -> Vec<Constraint> {
+    pub fn get_constraints(&self) -> Vec<Constraint> {
         let n_cells = self.width * self.height;
         let unknown_indices: Vec<usize> = (0..n_cells)
             .filter(|&i| self.board[i].state != CellState::Revealed)
