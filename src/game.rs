@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     FirstClickPolicy,
     solver::{self, Constraint},
@@ -43,7 +45,118 @@ pub struct Game {
     pub final_time: Option<Duration>,
 }
 
+impl fmt::Display for Game {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let cell = self.get_cell(x, y);
+                let representation = match cell.state {
+                    CellState::Covered => "#".to_string(),
+                    CellState::Flagged => "F".to_string(),
+                    CellState::Revealed => match cell.content {
+                        CellContent::Mine => "*".to_string(), // Should not be revealed unless game is over
+                        CellContent::Explosion => "X".to_string(),
+                        CellContent::Number(0) => ".".to_string(), // Dot for clarity on empty spaces
+                        CellContent::Number(n) => n.to_string(),
+                    },
+                };
+                // Write the character with a space for padding
+                write!(f, "{} ", representation)?;
+            }
+            // Add a newline at the end of each row
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
+
 impl Game {
+    /// Creates a Game from a text representation of the minefield.
+    ///
+    /// The text should be a grid where '*' represents a mine and any other
+    /// character represents a safe cell. All cells will be initialized in the
+    /// 'Covered' state. The function will automatically calculate the numbers
+    /// for the safe cells based on adjacent mines.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the input text is not a valid grid (e.g.,
+    /// if rows have different lengths or the input is empty after trimming).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming this code is in a crate where Game is accessible
+    /// use minesweeper_rs::game::Game;
+    ///
+    /// let board_layout = "
+    /// ..*..
+    /// .*...
+    /// ..*..
+    /// ";
+    /// let game = Game::from_text(board_layout);
+    /// assert_eq!(game.width, 5);
+    /// assert_eq!(game.height, 3);
+    /// assert_eq!(game.num_mines, 3);
+    /// ```
+    pub fn from_text(text: &str) -> Self {
+        let lines: Vec<&str> = text
+            .trim()
+            .lines()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        if lines.is_empty() {
+            // Return an empty game for empty input
+            return Game::new(0, 0, 0, FirstClickPolicy::Unprotected);
+        }
+
+        let height = lines.len();
+        let width = lines[0].chars().count();
+        let mut num_mines = 0;
+        let mut board = Vec::with_capacity(width * height);
+
+        for line in &lines {
+            // Ensure all lines have the same width for a valid grid
+            assert_eq!(
+                line.chars().count(),
+                width,
+                "All rows in the input text must have the same length."
+            );
+
+            for char in line.chars() {
+                let content = if char == '*' {
+                    num_mines += 1;
+                    CellContent::Mine
+                } else {
+                    // Placeholder for now, will be calculated later
+                    CellContent::Number(0)
+                };
+                board.push(Cell {
+                    content,
+                    state: CellState::Covered,
+                });
+            }
+        }
+
+        let mut game = Game {
+            board,
+            width,
+            height,
+            num_mines,
+            state: GameState::Playing,
+            first_click: true,
+            first_click_policy: FirstClickPolicy::Unprotected,
+            start_time: None,
+            final_time: None,
+        };
+
+        game.calculate_numbers();
+
+        game
+    }
+
     pub fn get_cell(&self, x: usize, y: usize) -> &Cell {
         &self.board[y * self.width + x]
     }
@@ -279,7 +392,7 @@ impl Game {
             }
         }
 
-        solver::solve_iterative_scaling(&mut p, &mut q, &constraints, 50);
+        solver::solve_iterative_scaling(&mut p, &mut q, &constraints, 100);
         p
     }
 }

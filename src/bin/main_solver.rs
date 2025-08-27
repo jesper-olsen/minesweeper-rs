@@ -14,6 +14,7 @@ fn benchmark_solver(
 ) -> usize {
     let (width, height, num_mines) = difficulty.dimensions();
     (0..num_games)
+        .into_iter()
         .into_par_iter()
         .map(|_| {
             let mut rng = rand::rng();
@@ -25,6 +26,7 @@ fn benchmark_solver(
             game.reveal(first_x, first_y);
 
             while game.state == GameState::Playing {
+                println!("{game}");
                 let probs = game.calculate_all_bomb_probs();
 
                 // Find lowest probability among covered cells
@@ -87,9 +89,9 @@ fn benchmark_solver(
 
 fn heatmap() {
     let num_games = 10000;
-    let first_click_policy = FirstClickPolicy::Unprotected;
+    //let first_click_policy = FirstClickPolicy::Unprotected;
     //let first_click_policy = FirstClickPolicy::GuaranteedZero;
-    //let first_click_policy = FirstClickPolicy::GuaranteedSafe;
+    let first_click_policy = FirstClickPolicy::GuaranteedSafe;
     //let difficulty = Difficulty::Intermediate;
     //let difficulty = Difficulty::Expert;
     let difficulty = Difficulty::Beginner;
@@ -109,5 +111,11 @@ fn heatmap() {
 }
 
 fn main() {
-    heatmap();
+    benchmark_solver(
+        1,
+        Difficulty::Beginner,
+        FirstClickPolicy::GuaranteedZero,
+        Some((0, 0)),
+    );
+    //heatmap();
 }
