@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt;
 
 use crate::{Constraint, FirstClickPolicy, solver};
@@ -345,15 +346,47 @@ impl Game {
         p[idx]
     }
 
-    pub fn get_constraints(&self) -> Vec<Constraint> {
+    // pub fn get_constraints(&self) -> Vec<Constraint> {
+    //     let n_cells = self.width * self.height;
+    //     let unknown_indices: Vec<usize> = (0..n_cells)
+    //         .filter(|&i| self.board[i].state != CellState::Revealed)
+    //         .collect();
+    //     let mut constraints = Vec::new();
+    //     constraints.push(Constraint::new(unknown_indices, self.num_mines as f64));
+
+    //     // add number constraints - from unrevealed neighbours
+    //     for y in 0..self.height {
+    //         for x in 0..self.width {
+    //             if let Cell {
+    //                 content: CellContent::Number(n),
+    //                 state: CellState::Revealed,
+    //             } = *self.get_cell(x, y)
+    //             {
+    //                 let unrevealed = self.get_adjacent_unrevealed(x, y);
+    //                 if !unrevealed.is_empty() {
+    //                     constraints.push(Constraint::new(unrevealed, n));
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     constraints
+    // }
+
+    pub fn get_constraints(&self) -> (Vec<usize>, Vec<Constraint>) {
         let n_cells = self.width * self.height;
+        let mut constraints_set: HashSet<Constraint> = HashSet::new();
+
         let unknown_indices: Vec<usize> = (0..n_cells)
             .filter(|&i| self.board[i].state != CellState::Revealed)
             .collect();
-        let mut constraints = Vec::new();
-        constraints.push(Constraint::new(unknown_indices, self.num_mines as f64));
 
-        // add number constraints - from unrevealed neighbours
+        // Create the constraint for the total number of mines
+        constraints_set.insert(Constraint::new(
+            unknown_indices.clone(),
+            self.num_mines as f64,
+        ));
+
+        // Add number constraints from unrevealed neighbours
         for y in 0..self.height {
             for x in 0..self.width {
                 if let Cell {
@@ -363,12 +396,15 @@ impl Game {
                 {
                     let unrevealed = self.get_adjacent_unrevealed(x, y);
                     if !unrevealed.is_empty() {
-                        constraints.push(Constraint::new(unrevealed, n));
+                        // Create and insert the constraint. The HashSet handles duplicates.
+                        constraints_set.insert(Constraint::new(unrevealed, n as f64));
                     }
                 }
             }
         }
-        constraints
+
+        // Convert the HashSet into a Vec for the return type
+        (unknown_indices, constraints_set.into_iter().collect())
     }
 
     pub fn calculate_all_bomb_probs(&self) -> Vec<f64> {
@@ -394,7 +430,7 @@ impl Game {
             }
         }
 
-        let constraints = self.get_constraints();
+        let (_, constraints) = self.get_constraints();
 
         solver::solve_iterative_scaling(&mut p, &mut q, &constraints, 100);
         p
