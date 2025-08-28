@@ -2,7 +2,83 @@ use std::collections::HashSet;
 use std::fmt;
 
 use crate::{Constraint, FirstClickPolicy, solver};
+use std::fs;
+use std::io;
+use std::path::Path;
 use std::time::{Duration, Instant};
+
+// --- Error types for robust error handling ---
+
+#[derive(Debug)]
+pub enum ParseGameError {
+    /// The input string was empty or contained only whitespace.
+    EmptyInput,
+    /// The rows in the input string have inconsistent lengths.
+    InconsistentRowLength {
+        expected: usize,
+        actual: usize,
+        row_index: usize,
+    },
+}
+
+impl fmt::Display for ParseGameError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParseGameError::EmptyInput => write!(f, "Input text cannot be empty."),
+            ParseGameError::InconsistentRowLength {
+                expected,
+                actual,
+                row_index,
+            } => write!(
+                f,
+                "Inconsistent row length at row {}: expected {}, but got {}",
+                row_index, expected, actual
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ParseGameError {}
+
+#[derive(Debug)]
+pub enum LoadGameError {
+    /// An error occurred while reading the file.
+    Io(io::Error),
+    /// An error occurred while parsing the file content.
+    Parse(ParseGameError),
+}
+
+impl fmt::Display for LoadGameError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LoadGameError::Io(err) => write!(f, "I/O error: {}", err),
+            LoadGameError::Parse(err) => write!(f, "Parse error: {}", err),
+        }
+    }
+}
+
+impl std::error::Error for LoadGameError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            LoadGameError::Io(err) => Some(err),
+            LoadGameError::Parse(err) => Some(err),
+        }
+    }
+}
+
+// Automatically convert IO and Parse errors into LoadGameError
+// This allows using the `?` operator for clean error handling.
+impl From<io::Error> for LoadGameError {
+    fn from(err: io::Error) -> Self {
+        LoadGameError::Io(err)
+    }
+}
+
+impl From<ParseGameError> for LoadGameError {
+    fn from(err: ParseGameError) -> Self {
+        LoadGameError::Parse(err)
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CellContent {
@@ -69,6 +145,18 @@ impl fmt::Display for Game {
 }
 
 impl Game {
+    /// Reads a file and uses `from_text` to parse its content into a Game.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `LoadGameError` if the file cannot be read (`LoadGameError::Io`)
+    /// or if the file content is not a valid grid (`LoadGameError::Parse`).
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, LoadGameError> {
+        let content = fs::read_to_string(path)?;
+        let game = Game::from_text(&content)?;
+        Ok(game)
+    }
+
     /// Creates a Game from a text representation of the minefield.
     ///
     /// The text should be a grid where '*' represents a mine and any other
@@ -76,10 +164,10 @@ impl Game {
     /// 'Covered' state. The function will automatically calculate the numbers
     /// for the safe cells based on adjacent mines.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// This function will panic if the input text is not a valid grid (e.g.,
-    /// if rows have different lengths or the input is empty after trimming).
+    /// This function will return an `Err` if the input text is not a valid grid
+    /// (e.g., if rows have different lengths or the input is empty).
     ///
     /// # Example
     ///
@@ -88,16 +176,21 @@ impl Game {
     /// use minesweeper_rs::game::Game;
     ///
     /// let board_layout = "
+    /// .*.
+    /// *..
+    /// ...
+    /// ";
+    /// let board_layout = "
     /// ..*..
     /// .*...
     /// ..*..
     /// ";
-    /// let game = Game::from_text(board_layout);
+    /// let game = Game::from_text(board_layout).unwrap(); // .unwrap() for example simplicity
     /// assert_eq!(game.width, 5);
     /// assert_eq!(game.height, 3);
     /// assert_eq!(game.num_mines, 3);
     /// ```
-    pub fn from_text(text: &str) -> Self {
+    pub fn from_text(text: &str) -> Result<Self, ParseGameError> {
         let lines: Vec<&str> = text
             .trim()
             .lines()
@@ -106,8 +199,7 @@ impl Game {
             .collect();
 
         if lines.is_empty() {
-            // Return an empty game for empty input
-            return Game::new(0, 0, 0, FirstClickPolicy::Unprotected);
+            return Err(ParseGameError::EmptyInput);
         }
 
         let height = lines.len();
@@ -115,20 +207,21 @@ impl Game {
         let mut num_mines = 0;
         let mut board = Vec::with_capacity(width * height);
 
-        for line in &lines {
-            // Ensure all lines have the same width for a valid grid
-            assert_eq!(
-                line.chars().count(),
-                width,
-                "All rows in the input text must have the same length."
-            );
+        for (y, line) in lines.iter().enumerate() {
+            let current_width = line.chars().count();
+            if current_width != width {
+                return Err(ParseGameError::InconsistentRowLength {
+                    expected: width,
+                    actual: current_width,
+                    row_index: y,
+                });
+            }
 
             for char in line.chars() {
                 let content = if char == '*' {
                     num_mines += 1;
                     CellContent::Mine
                 } else {
-                    // Placeholder for now, will be calculated later
                     CellContent::Number(0)
                 };
                 board.push(Cell {
@@ -152,7 +245,7 @@ impl Game {
 
         game.calculate_numbers();
 
-        game
+        Ok(game)
     }
 
     pub fn get_cell(&self, x: usize, y: usize) -> &Cell {
@@ -337,41 +430,6 @@ impl Game {
         }
     }
 
-    pub fn get_bomb_prob(&self, cell_x: usize, cell_y: usize) -> f64 {
-        if self.get_cell(cell_x, cell_y).state == CellState::Revealed {
-            return 0.0;
-        }
-        let p = self.calculate_all_bomb_probs();
-        let idx = cell_y * self.width + cell_x;
-        p[idx]
-    }
-
-    // pub fn get_constraints(&self) -> Vec<Constraint> {
-    //     let n_cells = self.width * self.height;
-    //     let unknown_indices: Vec<usize> = (0..n_cells)
-    //         .filter(|&i| self.board[i].state != CellState::Revealed)
-    //         .collect();
-    //     let mut constraints = Vec::new();
-    //     constraints.push(Constraint::new(unknown_indices, self.num_mines as f64));
-
-    //     // add number constraints - from unrevealed neighbours
-    //     for y in 0..self.height {
-    //         for x in 0..self.width {
-    //             if let Cell {
-    //                 content: CellContent::Number(n),
-    //                 state: CellState::Revealed,
-    //             } = *self.get_cell(x, y)
-    //             {
-    //                 let unrevealed = self.get_adjacent_unrevealed(x, y);
-    //                 if !unrevealed.is_empty() {
-    //                     constraints.push(Constraint::new(unrevealed, n));
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     constraints
-    // }
-
     pub fn get_constraints(&self) -> (Vec<usize>, Vec<Constraint>) {
         let n_cells = self.width * self.height;
         let mut constraints_set: HashSet<Constraint> = HashSet::new();
@@ -405,6 +463,15 @@ impl Game {
 
         // Convert the HashSet into a Vec for the return type
         (unknown_indices, constraints_set.into_iter().collect())
+    }
+
+    pub fn get_bomb_prob(&self, cell_x: usize, cell_y: usize) -> f64 {
+        if self.get_cell(cell_x, cell_y).state == CellState::Revealed {
+            return 0.0;
+        }
+        let p = self.calculate_all_bomb_probs();
+        let idx = cell_y * self.width + cell_x;
+        p[idx]
     }
 
     pub fn calculate_all_bomb_probs(&self) -> Vec<f64> {
