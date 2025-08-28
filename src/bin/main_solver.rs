@@ -6,6 +6,7 @@ use rand::Rng;
 use rand::prelude::IndexedRandom;
 use rayon::prelude::*;
 
+/// calculate win rate over given number of games
 fn benchmark_solver(
     num_games: usize,
     difficulty: Difficulty,
@@ -87,7 +88,8 @@ fn benchmark_solver(
 //     }
 // }
 
-fn heatmap() {
+/// Calculate win_rate for every possible 1st click
+fn _heatmap() {
     let num_games = 10000;
     //let first_click_policy = FirstClickPolicy::Unprotected;
     //let first_click_policy = FirstClickPolicy::GuaranteedZero;

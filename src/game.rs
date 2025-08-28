@@ -430,19 +430,26 @@ impl Game {
         }
     }
 
-    pub fn get_constraints(&self) -> (Vec<usize>, Vec<Constraint>) {
-        let n_cells = self.width * self.height;
-        let mut constraints_set: HashSet<Constraint> = HashSet::new();
+    pub fn get_covered(&self) -> Vec<usize> {
+        self.board
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| c.state != CellState::Revealed)
+            .map(|(i, _)| i)
+            .collect()
+    }
 
-        let unknown_indices: Vec<usize> = (0..n_cells)
-            .filter(|&i| self.board[i].state != CellState::Revealed)
-            .collect();
+    /// returns a 3-tuple:
+    /// * global constraint: all covered cell indicies and total num of mines
+    /// * local constraints: list of cells and their mine count
+    /// * sea_of_unknown: cell indices without local constraints
+    pub fn get_constraints(&self) -> (Constraint, Vec<Constraint>, Vec<usize>) {
+        let mut constraints_set: HashSet<Constraint> = HashSet::new();
+        let unknown_indices: Vec<usize> = self.get_covered(); // all unknown
+        let mut sea_of_unknown: Vec<usize> = Vec::new(); // unknown wihout local constraints
 
         // Create the constraint for the total number of mines
-        constraints_set.insert(Constraint::new(
-            unknown_indices.clone(),
-            self.num_mines as f64,
-        ));
+        let global_constraint = Constraint::new(unknown_indices, self.num_mines as f64);
 
         // Add number constraints from unrevealed neighbours
         for y in 0..self.height {
@@ -457,12 +464,18 @@ impl Game {
                         // Create and insert the constraint. The HashSet handles duplicates.
                         constraints_set.insert(Constraint::new(unrevealed, n as f64));
                     }
+                } else {
+                    sea_of_unknown.push(y * self.width + x);
                 }
             }
         }
-
+        sea_of_unknown.sort_unstable();
         // Convert the HashSet into a Vec for the return type
-        (unknown_indices, constraints_set.into_iter().collect())
+        (
+            global_constraint,
+            constraints_set.into_iter().collect(),
+            sea_of_unknown,
+        )
     }
 
     pub fn get_bomb_prob(&self, cell_x: usize, cell_y: usize) -> f64 {
@@ -497,9 +510,10 @@ impl Game {
             }
         }
 
-        let (_, constraints) = self.get_constraints();
+        let (global_constraint, mut local_constraints, _sea_of_unknown) = self.get_constraints();
+        local_constraints.push(global_constraint);
 
-        solver::solve_iterative_scaling(&mut p, &mut q, &constraints, 100);
+        solver::solve_iterative_scaling(&mut p, &mut q, &local_constraints, 100);
         p
     }
 }
