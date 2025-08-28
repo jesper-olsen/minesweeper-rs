@@ -365,6 +365,27 @@ impl Game {
         adjacent
     }
 
+    fn count_adjacent_revealed(&self, i: usize) -> usize {
+        let x = i % self.width;
+        let y = i / self.width;
+        let mut n = 0;
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                let (nx, ny) = (x as isize + dx, y as isize + dy);
+                if nx >= 0 && nx < self.width as isize && ny >= 0 && ny < self.height as isize {
+                    let idx = (ny * self.width as isize + nx) as usize;
+                    if self.board[idx].state == CellState::Revealed {
+                        n += 1
+                    }
+                }
+            }
+        }
+        n
+    }
+
     pub fn reveal(&mut self, x: usize, y: usize) {
         if x >= self.width || y >= self.height || self.get_cell(x, y).state != CellState::Covered {
             return;
@@ -439,6 +460,14 @@ impl Game {
             .collect()
     }
 
+    pub fn get_sea_of_unknown(&self) -> Vec<usize> {
+        (0..self.board.len())
+            .map(|i| (i, self.count_adjacent_revealed(i) == 0))
+            .filter(|(_, b)| *b)
+            .map(|(i, _)| i)
+            .collect()
+    }
+
     /// returns a 3-tuple:
     /// * global constraint: all covered cell indicies and total num of mines
     /// * local constraints: list of cells and their mine count
@@ -446,7 +475,7 @@ impl Game {
     pub fn get_constraints(&self) -> (Constraint, Vec<Constraint>, Vec<usize>) {
         let mut constraints_set: HashSet<Constraint> = HashSet::new();
         let unknown_indices: Vec<usize> = self.get_covered(); // all unknown
-        let mut sea_of_unknown: Vec<usize> = Vec::new(); // unknown wihout local constraints
+        let mut sea_of_unknown: Vec<usize> = self.get_sea_of_unknown(); // unknown wihout local constraints
 
         // Create the constraint for the total number of mines
         let global_constraint = Constraint::new(unknown_indices, self.num_mines as f64);
@@ -464,8 +493,6 @@ impl Game {
                         // Create and insert the constraint. The HashSet handles duplicates.
                         constraints_set.insert(Constraint::new(unrevealed, n as f64));
                     }
-                } else {
-                    sea_of_unknown.push(y * self.width + x);
                 }
             }
         }
