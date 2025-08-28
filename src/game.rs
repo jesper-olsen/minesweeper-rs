@@ -237,9 +237,9 @@ impl Game {
             height,
             num_mines,
             state: GameState::Playing,
-            first_click: true,
+            first_click: false, // normally mines are placed on first click
             first_click_policy: FirstClickPolicy::Unprotected,
-            start_time: None,
+            start_time: Some(Instant::now()),
             final_time: None,
         };
 
