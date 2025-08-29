@@ -554,3 +554,19 @@ impl Game {
         p
     }
 }
+
+pub fn display_probs(game: &Game, probs: &[f64]) {
+    assert!(probs.len() == game.height * game.width);
+    println!("\nProbability map:");
+    for row in 0..game.height {
+        for col in 0..game.width {
+            let idx = row * game.width + col;
+            if game.get_cell(col, row).state == CellState::Revealed {
+                print!("  -  "); // Already revealed
+            } else {
+                print!("{:4.2} ", probs[idx]);
+            }
+        }
+        println!();
+    }
+}
