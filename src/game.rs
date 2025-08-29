@@ -144,14 +144,19 @@ impl fmt::Display for Game {
 }
 
 impl Game {
-    pub fn display(&mut self, show_all: bool) {
-        if show_all {
-            let state = self.state.clone();
-            self.state = GameState::Won;
-            println!("{self}");
-            self.state = state
-        } else {
-            println!("{self}");
+    pub fn display_all(&self) {
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let cell = self.get_cell(x, y);
+                let representation = match cell.content {
+                    CellContent::Mine => "*".to_string(),
+                    CellContent::Explosion => "X".to_string(),
+                    CellContent::Number(0) => ".".to_string(), // Dot for clarity on empty spaces
+                    CellContent::Number(n) => n.to_string(),
+                };
+                print!("{} ", representation); // space for padding
+            }
+            println!(); // at the end of each row
         }
     }
 
