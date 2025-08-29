@@ -100,7 +100,7 @@ pub struct Cell {
     pub state: CellState,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum GameState {
     Playing,
     Won,
@@ -144,6 +144,17 @@ impl fmt::Display for Game {
 }
 
 impl Game {
+    pub fn display(&mut self, show_all: bool) {
+        if show_all {
+            let state = self.state.clone();
+            self.state = GameState::Won;
+            println!("{self}");
+            self.state = state
+        } else {
+            println!("{self}");
+        }
+    }
+
     /// Reads a file and uses `from_text` to parse its content into a Game.
     ///
     /// # Errors
