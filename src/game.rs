@@ -125,17 +125,16 @@ impl fmt::Display for Game {
             for x in 0..self.width {
                 let cell = self.get_cell(x, y);
                 let representation = match cell.state {
-                    CellState::Covered => "#".to_string(),
-                    CellState::Flagged => "F".to_string(),
-                    CellState::Revealed => match cell.content {
-                        CellContent::Mine => "*".to_string(), // Should not be revealed unless game is over
+                    CellState::Covered if self.state == GameState::Playing => "#".to_string(),
+                    CellState::Flagged if self.state == GameState::Playing => "F".to_string(),
+                    _ => match cell.content {
+                        CellContent::Mine => "*".to_string(),
                         CellContent::Explosion => "X".to_string(),
                         CellContent::Number(0) => ".".to_string(), // Dot for clarity on empty spaces
                         CellContent::Number(n) => n.to_string(),
                     },
                 };
-                // Write the character with a space for padding
-                write!(f, "{} ", representation)?;
+                write!(f, "{} ", representation)?; // space for padding
             }
             // Add a newline at the end of each row
             writeln!(f)?;
