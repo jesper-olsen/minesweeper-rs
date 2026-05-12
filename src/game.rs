@@ -458,10 +458,10 @@ impl Game {
         let non_mine_cells = self.width * self.height - self.num_mines;
         if self.count(CellState::Revealed) == non_mine_cells {
             self.state = GameState::Won;
-            if self.final_time.is_none() {
-                if let Some(start) = self.start_time {
-                    self.final_time = Some(start.elapsed());
-                }
+            if self.final_time.is_none()
+                && let Some(start) = self.start_time
+            {
+                self.final_time = Some(start.elapsed());
             }
         }
     }

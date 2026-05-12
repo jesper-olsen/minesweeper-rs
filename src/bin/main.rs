@@ -12,7 +12,6 @@ struct Args {
     difficulty: Option<Difficulty>,
 
     #[arg(short, long, value_enum, default_value_t = FirstClickPolicy::GuaranteedZero)]
-    ///
     first_click_policy: FirstClickPolicy,
 
     #[arg(long, default_value_t = 9)]

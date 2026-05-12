@@ -2,7 +2,7 @@ use minesweeper_rs::{
     Difficulty, FirstClickPolicy,
     game::{CellState, Game, GameState},
 };
-use rand::Rng;
+use rand::RngExt;
 use rand::prelude::IndexedRandom;
 use rayon::prelude::*;
 
@@ -15,7 +15,6 @@ fn benchmark_solver(
 ) -> usize {
     let (width, height, num_mines) = difficulty.dimensions();
     (0..num_games)
-        .into_iter()
         .into_par_iter()
         .map(|_| {
             let mut rng = rand::rng();
@@ -47,10 +46,10 @@ fn benchmark_solver(
                 let mut candidates = Vec::new();
                 for y in 0..height {
                     for x in 0..width {
-                        if game.get_cell(x, y).state == CellState::Covered {
-                            if (probs[y * width + x] - min_prob).abs() < 1e-12 {
-                                candidates.push((x, y));
-                            }
+                        if game.get_cell(x, y).state == CellState::Covered
+                            && (probs[y * width + x] - min_prob).abs() < 1e-12
+                        {
+                            candidates.push((x, y));
                         }
                     }
                 }

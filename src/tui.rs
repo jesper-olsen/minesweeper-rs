@@ -40,9 +40,9 @@ impl Tui {
         let cursor_y = game.height / 2;
         Ok(Tui {
             stdout,
-            game,
             cursor_x,
             cursor_y,
+            game,
             show_bomb_probability,
         })
     }
@@ -79,7 +79,7 @@ impl Tui {
                 CellContent::Number(8) => ('8', Color::DarkGrey),
                 CellContent::Number(n) => (
                     // unreachable - at most 8 neighbours
-                    char::from_digit(n as u32, 10).unwrap_or('?'),
+                    char::from_digit(u32::from(n), 10).unwrap_or('?'),
                     Color::Yellow,
                 ),
             },
@@ -133,10 +133,10 @@ impl Tui {
 
         // Wait for a real key press (ignore releases and repeats)
         loop {
-            if let Event::Key(key_event) = event::read()? {
-                if key_event.kind == KeyEventKind::Press {
-                    break;
-                }
+            if let Event::Key(key_event) = event::read()?
+                && key_event.kind == KeyEventKind::Press
+            {
+                break;
             }
         }
 
@@ -276,10 +276,10 @@ impl Tui {
                     KeyCode::Left | KeyCode::Char('h') => self.move_cursor(-1, 0),
                     KeyCode::Right | KeyCode::Char('l') => self.move_cursor(1, 0),
                     KeyCode::Char('r') | KeyCode::Enter => {
-                        self.game.reveal(self.cursor_x, self.cursor_y)
+                        self.game.reveal(self.cursor_x, self.cursor_y);
                     }
-                    KeyCode::Char('f') | KeyCode::Char(' ') => {
-                        self.game.flag(self.cursor_x, self.cursor_y)
+                    KeyCode::Char('f' | ' ')  => {
+                        self.game.flag(self.cursor_x, self.cursor_y);
                     }
                     _ => {}
                 }
