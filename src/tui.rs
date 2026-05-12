@@ -145,7 +145,7 @@ impl Tui {
 
     /// Redraws the entire screen using explicit cursor positioning for stability.
     fn display(&mut self) -> Result<()> {
-        //queue!(self.stdout, Clear(ClearType::All))?;
+        queue!(self.stdout, Clear(ClearType::All))?;
         // --- Draw static text ---
         let name = format!(
             "{BOMB} MINESWEEPER{BOMB}  ({}x{}, {} mines)",
