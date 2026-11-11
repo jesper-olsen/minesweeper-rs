@@ -26,7 +26,9 @@ fn benchmark_solver(
             game.reveal(first_x, first_y);
 
             while game.state == GameState::Playing {
-                println!("{game}");
+                if num_games == 1 {
+                    println!("{game}"); // single-game demo; keeps heatmap output clean
+                }
                 let probs = game.calculate_all_bomb_probs();
 
                 // Find lowest probability among covered cells

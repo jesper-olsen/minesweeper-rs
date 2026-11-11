@@ -75,7 +75,7 @@ impl Tui {
                 CellContent::Number(4) => ('4', Color::DarkBlue),
                 CellContent::Number(5) => ('5', Color::DarkRed),
                 CellContent::Number(6) => ('6', Color::DarkCyan),
-                CellContent::Number(7) => ('7', Color::Black),
+                CellContent::Number(7) => ('7', Color::DarkMagenta),
                 CellContent::Number(8) => ('8', Color::DarkGrey),
                 CellContent::Number(n) => (
                     // unreachable - at most 8 neighbours
@@ -98,7 +98,7 @@ impl Tui {
             ("  ↑↓←→ / hjkl    Move cursor", Color::White),
             ("  R / Enter      Reveal cell", Color::White),
             ("  F / Space      Toggle flag", Color::White),
-            ("  H / ?          This help", Color::White),
+            ("  ?              This help", Color::White),
             ("  N              New game (when over)", Color::White),
             ("  Q / Esc        Quit", Color::White),
             ("", Color::White),
@@ -258,6 +258,12 @@ impl Tui {
                 ..
             }) = event::read()?
             {
+                // accept shifted / caps-lock letters
+                let code = match code {
+                    KeyCode::Char(c) => KeyCode::Char(c.to_ascii_lowercase()),
+                    other => other,
+                };
+
                 let is_game_over = self.game.state != GameState::Playing;
                 match code {
                     KeyCode::Char('q') | KeyCode::Esc => break,
@@ -278,7 +284,7 @@ impl Tui {
                     KeyCode::Char('r') | KeyCode::Enter => {
                         self.game.reveal(self.cursor_x, self.cursor_y);
                     }
-                    KeyCode::Char('f' | ' ')  => {
+                    KeyCode::Char('f' | ' ') => {
                         self.game.flag(self.cursor_x, self.cursor_y);
                     }
                     _ => {}

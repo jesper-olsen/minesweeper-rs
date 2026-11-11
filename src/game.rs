@@ -402,7 +402,11 @@ impl Game {
     }
 
     pub fn reveal(&mut self, x: usize, y: usize) {
-        if x >= self.width || y >= self.height || self.get_cell(x, y).state != CellState::Covered {
+        if self.state != GameState::Playing
+            || x >= self.width
+            || y >= self.height
+            || self.get_cell(x, y).state != CellState::Covered
+        {
             return;
         }
 
@@ -420,6 +424,7 @@ impl Game {
                 if let Some(start) = self.start_time {
                     self.final_time = Some(start.elapsed());
                 }
+                return;
             }
             CellContent::Number(0) => {
                 for dy in -1..=1 {
@@ -441,7 +446,11 @@ impl Game {
     }
 
     pub fn flag(&mut self, x: usize, y: usize) {
-        if x < self.width && y < self.height && self.get_cell(x, y).state != CellState::Revealed {
+        if self.state == GameState::Playing
+            && x < self.width
+            && y < self.height
+            && self.get_cell(x, y).state != CellState::Revealed
+        {
             self.get_cell_mut(x, y).state = match self.get_cell(x, y).state {
                 CellState::Covered => CellState::Flagged,
                 CellState::Flagged => CellState::Covered,
@@ -513,11 +522,11 @@ impl Game {
         }
         sea_of_unknown.sort_unstable();
         // Convert the HashSet into a Vec for the return type
-        (
-            global_constraint,
-            constraints_set.into_iter().collect(),
-            sea_of_unknown,
-        )
+        // HashSet order is randomised per run and the solver is order-sensitive,
+        // so sort for reproducible results
+        let mut local_constraints: Vec<Constraint> = constraints_set.into_iter().collect();
+        local_constraints.sort_by(|a, b| a.cells.cmp(&b.cells).then(a.count.total_cmp(&b.count)));
+        (global_constraint, local_constraints, sea_of_unknown)
     }
 
     pub fn get_bomb_prob(&self, cell_x: usize, cell_y: usize) -> f64 {
@@ -573,5 +582,26 @@ pub fn display_probs(game: &Game, probs: &[f64]) {
             }
         }
         println!();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clicking_the_last_mine_is_a_loss() {
+        // revealing the mine makes revealed == non_mine_cells, which used to read as a win
+        let mut game = Game::from_text("*.").unwrap();
+        game.reveal(0, 0);
+        assert_eq!(game.state, GameState::Lost);
+    }
+
+    #[test]
+    fn no_moves_after_game_over() {
+        let mut game = Game::from_text("*.").unwrap();
+        game.reveal(0, 0);
+        game.reveal(1, 0);
+        assert_eq!(game.get_cell(1, 0).state, CellState::Covered);
     }
 }
